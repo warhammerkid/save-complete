@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://savecomplete/locale/save_complete.dtd" >
+<overlay id="savecomplete" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script type="application/x-javascript" src="chrome://savecomplete/content/savecomplete.js" />
+
+  <popup id="contentAreaContextMenu">
+    <menuitem id="savecomplete_context" label="&save_complete.menuitem.save;" hidden="true" insertafter="context-savepage" oncommand="savecomplete.save();"/>
+  </popup>
+
+  <menupopup id="menu_FilePopup">
+    <menuitem id="savecomplete_menuitem" label="&save_complete.menuitem.save;" hidden="false" insertbefore="menu_saveFrame" oncommand="savecomplete.save();"/>
+  </menupopup>
+</overlay>

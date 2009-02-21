@@ -1,0 +1,10 @@
+overlay chrome://browser/content/browser.xul    chrome://savecomplete/content/overlay.xul
+content savecomplete    chrome/content/
+locale  savecomplete  en-US  chrome/locale/en-US/
+locale  savecomplete  ru-RU  chrome/locale/ru-RU/
+locale  savecomplete  fr-FR  chrome/locale/fr-FR/
+locale  savecomplete  es-ES  chrome/locale/es-ES/
+locale  savecomplete  ja-JP  chrome/locale/ja-JP/
+locale  savecomplete  it-IT  chrome/locale/it-IT/
+locale  savecomplete  sk-SK  chrome/locale/sk-SK/
+locale  savecomplete  tr-TR  chrome/locale/tr-TR/
