@@ -2,7 +2,8 @@
 
 <!DOCTYPE overlay SYSTEM "chrome://savecomplete/locale/save_complete.dtd" >
 <overlay id="savecomplete" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-  <script type="application/x-javascript" src="chrome://savecomplete/content/savecomplete.js" />
+  <script type="application/x-javascript" src="chrome://savecomplete/content/main.js" />
+  <script type="application/x-javascript" src="chrome://savecomplete/content/saver.js" />
 
   <popup id="contentAreaContextMenu">
     <menuitem id="savecomplete_context" label="&save_complete.menuitem.save;" hidden="true" insertafter="context-savepage" oncommand="savecomplete.save();"/>
