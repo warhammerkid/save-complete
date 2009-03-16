@@ -91,6 +91,7 @@ scPageSaver.prototype.run = function(callback) {
     this._currentDownloadIndex = 0;
     this._downloads = [];
     this._persists = [];
+    this._saveMap = {};
 
     try {
         this._extractURIs();
@@ -381,6 +382,7 @@ scPageSaver.prototype._finished = function() {
     this._downloads = null;
     this._persists = null;
     this._callback = null;
+    this._saveMap = null;
     this._warnings = null;
     this._errors = null;
 }
@@ -443,25 +445,45 @@ scPageSaver.prototype._getDir = function() {
 };
 
 /**
- * Calculates the save path for the given scURI object
+ * Calculates the save path for the given scURI object. Is only used for files
+ * in the extras folder.
  * @function {String} _savePath
  * @param {scPageSaver.scURI} uri - The uri object to generate the path for
  * @param {optional Boolean} includeFolder - Whether or not to include the data folder in the path
  * @return The calculated save path
  */
 scPageSaver.prototype._savePath = function(uri, includeFolder) {
-    var fileName = uri.uri.path.split('/').pop();
-    fileName = fileName.replace(/\?.*$/,"");
+    var saveKey = uri.toString();
 
-    if(fileName == "") {
-        if(!this._tempPathId) this._tempPathId = 1;
-        fileName = 'file_'+this._tempPathId++
+    if(typeof this._saveMap[saveKey] == 'undefined') {
+        // Determine the base file name to use
+        var fileName = uri.uri.path.split('/').pop();
+        fileName = fileName.replace(/\?.*$/,"");
+        if(fileName == "") fileName = "unnamed";
+
+        /* Here we must check if the file can be saved to disk with the chosen
+         * name. One case where the file cannot be saved is when the name
+         * conflicts with one of another file that must be saved. Note that
+         * whether two names collide is dependent on the underlying filesystem:
+         * for example, on FAT on Windows two file names that differ only in
+         * case conflict with each other, while on ext2 on Linux this conflict
+         * does not occur.
+         */
+        // Build a new nsIFile corresponding to the file name to be saved
+        var actualFileOnDisk = this._getDir();
+        actualFileOnDisk.append(fileName);
+
+        // Since the file is not actually saved until later, we must create a placeholder
+        actualFileOnDisk.createUnique(Components.interfaces.nsIFile.FILE_TYPE, 0644);
+
+        // Find out which unique name has been used
+        fileName = actualFileOnDisk.leafName;
+
+        // Save to save map
+        this._saveMap[saveKey] = fileName;
     }
 
-    if(includeFolder)
-        return this._dataFolder.leafName+'/'+fileName;
-    else
-        return fileName;
+    return (includeFolder ? this._dataFolder.leafName+'/' : '') + this._saveMap[saveKey];
 };
 
 /**
