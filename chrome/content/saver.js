@@ -19,6 +19,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *   Paolo Amadini <http://www.amadzone.org/>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -53,8 +54,14 @@ var scPageSaver = function(doc, file, dataFolder) {
     this._doc = doc;
     this._file = file;
     if(file.exists() == false) file.create(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0644);
-    this._dataFolder = dataFolder;
-    if (dataFolder.exists() == false) dataFolder.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0755);
+
+    // Delete and re-create dataFolder
+    var dataFolderBackup = dataFolder.parent;
+    var folderName = dataFolder.leafName;
+    if (dataFolder.exists()) dataFolder.remove(true);
+    dataFolderBackup.append(folderName);
+    this._dataFolder = dataFolderBackup;
+    this._dataFolder.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0755);
 }
 
 scPageSaver.SUCCESS = 'success';
