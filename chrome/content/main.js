@@ -112,7 +112,7 @@ var savecomplete = {
             }
         }
 
-        if(savecomple.DEBUG_MODE) savecomplete.dumpObj(messages);
+        if(savecomplete.DEBUG_MODE) savecomplete.dumpObj(messages);
     },
     /* Console logging functions */
     dump: function(message) { // Debuging function -- prints to javascript console
