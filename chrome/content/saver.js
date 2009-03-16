@@ -75,6 +75,7 @@ scPageSaver.STYLE_RULE = 1;
 scPageSaver.IMPORT_RULE = 3;
 scPageSaver.MEDIA_RULE = 4;
 scPageSaver.DEFAULT_CHARSET = "ISO-8859-1";
+scPageSaver.DEFAULT_WRITE_CHARSET = "UTF-8"
 
 /**
  * Starts the saving process. Calls the callback when done saving or if it failed
@@ -268,7 +269,7 @@ scPageSaver.prototype._processNextURI = function() {
                 var uri = this._uris[n];
 
                 // Skip empty urls or ones that aren't for the base document
-                if(!uri.extractedURI || uri.where != "base") continue;
+                if(!uri.extractedURI || uri.type == 'index' || uri.where != "base") continue;
 
                 var found = this._regexEscape(uri.extractedURI);
                 var savePathURL = this._savePath(uri, true).replace(' ', '%20', 'g');
@@ -306,7 +307,7 @@ scPageSaver.prototype._processNextURI = function() {
             // TODO: Fix anchors to point to absolute location instead of relative
 
             // Save adjusted file
-            this._writeFile(this._file, data, download.charset || scPageSaver.DEFAULT_CHARSET);
+            this._writeFile(this._file, data, download.charset);
         } else {
             // Other HTML files, if found
 
@@ -315,7 +316,7 @@ scPageSaver.prototype._processNextURI = function() {
             // Save adjusted file
             var fileObj = this._getDir();
             fileObj.append(this._savePath(download.uri,false));
-            this._writeFile(fileObj, data, download.charset || scPageSaver.DEFAULT_CHARSET);
+            this._writeFile(fileObj, data, download.charset);
         }
     } else if(download.contentType == "text/css") {
         // Fix all URLs in this stylesheet
@@ -324,7 +325,7 @@ scPageSaver.prototype._processNextURI = function() {
             var uri = this._uris[n];
 
             // Skip empty urls or ones that aren't for external CSS files
-            if(!uri.extractedURI || uri.where != "extcss") continue;
+            if(!uri.extractedURI || uri.type == 'index' || uri.where != "extcss") continue;
 
             var found = this._regexEscape(uri.extractedURI);
             var savePathURL = this._savePath(uri, false).replace(' ', '%20', 'g');
@@ -344,7 +345,12 @@ scPageSaver.prototype._processNextURI = function() {
         // Save adjusted stylesheet
         var fileObj = this._getDir();
         fileObj.append(this._savePath(download.uri,false));
-        this._writeFile(fileObj, data, download.charset || scPageSaver.DEFAULT_CHARSET);
+        this._writeFile(fileObj, data, download.charset);
+    } else if(/^text\//.test(download.contentType) || download.contentType == 'application/x-javascript') {
+        // Had problems with nsWebBrowserPersist and text files, so for now I'll do the saving
+        var fileObj = this._getDir();
+        fileObj.append(this._savePath(download.uri,false));
+        this._writeFile(fileObj, data, download.charset);
     } else if(download.contentType != "") {
         // Something we aren't processing so use nsWebBrowserPersist, because it always works
         var persist = Components.classes["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Components.interfaces.nsIWebBrowserPersist);
@@ -397,6 +403,7 @@ scPageSaver.prototype._finished = function() {
 scPageSaver.prototype._writeFile = function(file, contents, charset) {
     var foStream = Components.classes['@mozilla.org/network/file-output-stream;1'].createInstance(Components.interfaces.nsIFileOutputStream);
     var flags = 0x02 | 0x08 | 0x20;
+    if(!charset) charset = scPageSaver.DEFAULT_WRITE_CHARSET;
     try {
         foStream.init(file, flags, 0644, 0);
         var os = Components.classes["@mozilla.org/intl/converter-output-stream;1"].createInstance(Components.interfaces.nsIConverterOutputStream);
