@@ -117,13 +117,13 @@ scPageSaver.prototype._extractURIs = function() {
     }
 
     // Process images
-    iter = this._doc.evaluate("//img[@src]", this._doc, null, 0, null);
+    iter = this._doc.evaluate("//img[@src]", this._doc, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
     while(e = iter.iterateNext()) {
         this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), this._uri, 'attribute', 'base'));
     }
 
     // Process input elements with an image type
-    iter = this._doc.evaluate("//input[@type=image]", this._doc, null, 0, null);
+    iter = this._doc.evaluate("//input[@type='image']", this._doc, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
     while(e = iter.iterateNext()) {
         this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), this._uri, 'attribute', 'base'));
     }
