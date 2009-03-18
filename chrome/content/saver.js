@@ -61,7 +61,6 @@ var scPageSaver = function(doc, file, dataFolder) {
     if (dataFolder.exists()) dataFolder.remove(true);
     dataFolderBackup.append(folderName);
     this._dataFolder = dataFolderBackup;
-    this._dataFolder.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0755);
 }
 
 scPageSaver.SUCCESS = 'success';
@@ -314,7 +313,7 @@ scPageSaver.prototype._processNextURI = function() {
             // TODO: Fix anchors to point to absolute location instead of relative
 
             // Save adjusted file
-            var fileObj = this._getDir();
+            var fileObj = this._dataFolder.clone();
             fileObj.append(this._savePath(download.uri,false));
             this._writeFile(fileObj, data, download.charset);
         }
@@ -343,18 +342,18 @@ scPageSaver.prototype._processNextURI = function() {
         }
 
         // Save adjusted stylesheet
-        var fileObj = this._getDir();
+        var fileObj = this._dataFolder.clone();
         fileObj.append(this._savePath(download.uri,false));
         this._writeFile(fileObj, data, download.charset);
     } else if(/^text\//.test(download.contentType) || download.contentType == 'application/x-javascript') {
         // Had problems with nsWebBrowserPersist and text files, so for now I'll do the saving
-        var fileObj = this._getDir();
+        var fileObj = this._dataFolder.clone();
         fileObj.append(this._savePath(download.uri,false));
         this._writeFile(fileObj, data, download.charset);
     } else if(download.contentType != "") {
         // Something we aren't processing so use nsWebBrowserPersist, because it always works
         var persist = Components.classes["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Components.interfaces.nsIWebBrowserPersist);
-        var fileObj = this._getDir();
+        var fileObj = this._dataFolder.clone();
         fileObj.append(this._savePath(download.uri,false));
         persist.progressListener = new scPageSaver.scPersistListener(this);
         try {
@@ -441,17 +440,6 @@ scPageSaver.prototype._processDupes = function() {
 };
 
 /**
- * Returns a new nsIFile object that references the data directory
- * @function {nsIFile} _getDir
- * @return The directory reference
- */
-scPageSaver.prototype._getDir = function() {
-    var dir = this._dataFolder.parent;
-    dir.append(this._dataFolder.leafName);
-    return dir;
-};
-
-/**
  * Calculates the save path for the given scURI object. Is only used for files
  * in the extras folder.
  * @function {String} _savePath
@@ -477,7 +465,8 @@ scPageSaver.prototype._savePath = function(uri, includeFolder) {
          * does not occur.
          */
         // Build a new nsIFile corresponding to the file name to be saved
-        var actualFileOnDisk = this._getDir();
+        var actualFileOnDisk = this._dataFolder.clone();
+        if(!this._dataFolder.exists()) this._dataFolder.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0755);
         actualFileOnDisk.append(fileName);
 
         // Since the file is not actually saved until later, we must create a placeholder
