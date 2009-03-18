@@ -1,2 +1,8 @@
-<!ENTITY save_complete.menuitem.save "Save Complete Page As...">
+<!-- File and context menu translations -->
+<!ENTITY menuitem.save.label "Save Complete Page As...">
+<!ENTITY menuitem.save.accesskey.filemenu "">
+<!ENTITY menuitem.save.accesskey.contextmenu "C">
 
+<!-- Save Complete Save Command -->
+<!ENTITY command.save.key "S">
+<!ENTITY command.save.modifiers "accel shift">

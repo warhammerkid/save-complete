@@ -5,11 +5,19 @@
   <script type="application/x-javascript" src="chrome://savecomplete/content/main.js" />
   <script type="application/x-javascript" src="chrome://savecomplete/content/saver.js" />
 
-  <popup id="contentAreaContextMenu">
-    <menuitem id="savecomplete_context" label="&save_complete.menuitem.save;" hidden="true" insertafter="context-savepage" oncommand="savecomplete.save();"/>
-  </popup>
+  <commandset>
+    <command id="scNormalSave" oncommand="savecomplete.save();" />
+  </commandset>
+
+  <keyset>
+    <key id="scNormalSaveKey" key="&command.save.key;" modifiers="&command.save.modifiers;" command="scNormalSave" />
+  </keyset>
 
   <menupopup id="menu_FilePopup">
-    <menuitem id="savecomplete_menuitem" label="&save_complete.menuitem.save;" hidden="false" insertbefore="menu_saveFrame" oncommand="savecomplete.save();"/>
+    <menuitem id="scNormalSaveFileMenuItem" key="scNormalSaveKey" label="&menuitem.save.label;" accesskey="&menuitem.save.accesskey.filemenu;" command="scNormalSave" insertbefore="menu_saveFrame" />
   </menupopup>
+
+  <popup id="contentAreaContextMenu">
+    <menuitem id="scNormalSaveContextMenuItem" label="&menuitem.save.label;" accesskey="&menuitem.save.accesskey.contextmenu;" command="scNormalSave" hidden="true" insertafter="context-savepage" />
+  </popup>
 </overlay>

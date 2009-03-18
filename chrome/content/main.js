@@ -49,16 +49,37 @@ var savecomplete = {
         // Make sure not called again and the listener is cleaned up
         window.removeEventListener('load',savecomplete.onload, true);
 
-        // Show in context menu if the preference for it is set
+        // Hook context menu to contextShow
+        var contextMenu = document.getElementById('contentAreaContextMenu');
+        contextMenu.addEventListener('popupshowing', savecomplete.contextShow, true);
+
+        savecomplete.updateUIFromPrefs();
+    },
+    updateUIFromPrefs: function() {
         var PrefBranch = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
-        var status = PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.context");
-        if(status == true) {
-            var contextMenu = document.getElementById('contentAreaContextMenu');
-            contextMenu.addEventListener('popupshowing',savecomplete.checkStatus,true);
+
+        var replaceBuiltin = PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.replace_builtin");
+
+        // Show in context menu if the preference for it is set and replace builtin is not on
+        savecomplete.showInContext = !replaceBuiltin && PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.context");
+
+        // Replace built-in save if preference is set
+        var builtinSaveCommand = document.getElementById('Browser:SavePage');
+        var contextSave = document.getElementById('context-savepage');
+        var saveCompleteMenuItem = document.getElementById('scNormalSaveFileMenuItem');
+        if(replaceBuiltin) {
+            builtinSaveCommand.setAttribute('oncommand', 'savecomplete.overrideSave()');
+            contextSave.setAttribute('oncommand', 'savecomplete.overrideSave()');
+            saveCompleteMenuItem.hidden = true;
+        } else {
+            builtinSaveCommand.setAttribute('oncommand', 'saveDocument(window.content.document)');
+            contextSave.setAttribute('oncommand', 'gContextMenu.savePageAs();');
+            saveCompleteMenuItem.hidden = false;
         }
     },
-    checkStatus: function() {
-        gContextMenu.showItem("savecomplete_context", !( gContextMenu.inDirList || gContextMenu.isContentSelected || gContextMenu.onLink));
+    contextShow: function() {
+        if(!savecomplete.showInContext) return;
+        gContextMenu.showItem("scNormalSaveContextMenuItem", !( gContextMenu.inDirList || gContextMenu.isContentSelected || gContextMenu.onLink));
     },
     save: function() { // Called by selecting from either the context menu or the file menu
         // Get page that is supposed to be saved
@@ -96,14 +117,50 @@ var savecomplete = {
         var res = fp.show();
         if (res == nsIFilePicker.returnCancel) return;
 
-        var htmlFile = fp.file;
-        var folderName = htmlFile.leafName.replace(/\.\w*$/,"") /*.replace(/\s+/g,"_")*/ + "_files";
-        var dir = htmlFile.parent;
-        dir.append(folderName);
-
-        var saver = new scPageSaver(focusedWindow.document, htmlFile, dir);
+        var saver = new scPageSaver(focusedWindow.document, fp.file, savecomplete.getDirFromFile(fp.file));
         savecomplete.savers.push(saver);
         saver.run(savecomplete.saverComplete);
+    },
+    overrideSave: function() { // Called by overridden internal Firefox save
+        /* overrideSave overrides functions defined in contentAreaUtils.js to
+         * maintain support for the original save functionality, while at the same
+         * time enhancing complete webpage saves.
+         */
+        // Check if can override successfully
+        if(typeof window['getTargetFile'] == 'undefined' || typeof window['saveDocument'] == 'undefined') {
+            savecomplete.save();
+            return;
+        }
+
+        // Get document
+        var focusedWindow = document.commandDispatcher.focusedWindow;
+        if (focusedWindow == window) focusedWindow = _content;
+        var doc = focusedWindow.document;
+
+        // First, replace getTargetFile with one of our own making
+        var originalGetTargetFile = window['getTargetFile'];
+        window['getTargetFile'] = function(fpParams, aSkipPrompt) {
+            // Run original
+            var returnValue = originalGetTargetFile(fpParams, aSkipPrompt);
+            if(!returnValue) return false;
+
+            if(fpParams.saveMode != 0 && fpParams.saveAsType == 0) {
+                // Save webpage complete selected so override and return false to stop internalSave
+                savecomplete.dump('Using savecomplete save instead of firefox save');
+                var saver = new scPageSaver(doc, fpParams.file, savecomplete.getDirFromFile(fpParams.file));
+                savecomplete.savers.push(saver);
+                saver.run(savecomplete.saverComplete);
+                return false;
+            }
+
+            return returnValue;
+        };
+
+        // Call saveDocument
+        saveDocument(doc, false);
+
+        // Finally restore getTargetFile to what it was originally
+        window['getTargetFile'] = originalGetTargetFile;
     },
     saverComplete: function(saver, status, messages) {
         for(var i = 0; i < savecomplete.savers.length; i++) {
@@ -113,6 +170,13 @@ var savecomplete = {
         }
 
         if(savecomplete.DEBUG_MODE) savecomplete.dumpObj(messages);
+    },
+    getDirFromFile: function(file) {
+        // Returns a reference to the save directory through the given file
+        var folderName = file.leafName.replace(/\.\w*$/,"") + "_files";
+        var dir = file.clone();
+        dir.leafName = folderName;
+        return dir;
     },
     /* Console logging functions */
     dump: function(message) { // Debuging function -- prints to javascript console
