@@ -117,7 +117,7 @@ var savecomplete = {
         var res = fp.show();
         if (res == nsIFilePicker.returnCancel) return;
 
-        var saver = new scPageSaver(focusedWindow.document, fp.file, savecomplete.getDirFromFile(fp.file));
+        var saver = new scPageSaver(focusedWindow.document, fp.file, savecomplete.getDirFromFile(fp.file), savecomplete.getSaverOptions());
         savecomplete.savers.push(saver);
         saver.run(savecomplete.saverComplete);
     },
@@ -147,7 +147,7 @@ var savecomplete = {
             if(fpParams.saveMode != 0 && fpParams.saveAsType == 0) {
                 // Save webpage complete selected so override and return false to stop internalSave
                 savecomplete.dump('Using savecomplete save instead of firefox save');
-                var saver = new scPageSaver(doc, fpParams.file, savecomplete.getDirFromFile(fpParams.file));
+                var saver = new scPageSaver(doc, fpParams.file, savecomplete.getDirFromFile(fpParams.file), savecomplete.getSaverOptions());
                 savecomplete.savers.push(saver);
                 saver.run(savecomplete.saverComplete);
                 return false;
@@ -177,6 +177,13 @@ var savecomplete = {
         var dir = file.clone();
         dir.leafName = folderName;
         return dir;
+    },
+    getSaverOptions: function() {
+        var PrefBranch = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
+        return {
+            saveIframes: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.save_iframes"),
+            saveObjects: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.save_objects")
+        };
     },
     /* Console logging functions */
     dump: function(message) { // Debuging function -- prints to javascript console
