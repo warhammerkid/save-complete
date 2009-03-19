@@ -86,6 +86,7 @@ scPageSaver.prototype.run = function(callback) {
     this._callback = callback;
     this._errors = [];
     this._warnings = [];
+    this._simultaneousDownloads = 0;
     this._currentURIIndex = 0;
     this._uris = [];
     this._currentDownloadIndex = 0;
@@ -93,8 +94,14 @@ scPageSaver.prototype.run = function(callback) {
     this._persists = [];
     this._saveMap = {};
 
+    this._timers = {};
+
     try {
+        this._timers.extract = {start: new Date(), finish: null};
         this._extractURIs();
+        this._timers.extract.finish = new Date();
+
+        this._timers.download = {start: new Date(), finish: null};
         this._downloadNextURI();
     } catch(e) {
         this._errors.push(e.toString());
@@ -205,27 +212,46 @@ scPageSaver.prototype._extractURIsFromStyleSheet = function(styleSheet, importPa
  * @function _downloadNextURI
  */
 scPageSaver.prototype._downloadNextURI = function() {
+    // 4 simultaneous "downloads" max
+    while(this._simultaneousDownloads < 4 && this._currentURIIndex < this._uris.length) {
+        var currentURI = this._uris[this._currentURIIndex];
+
+        // Skip dupes
+        if(currentURI.dupe) {
+            this._currentURIIndex++;
+            continue;
+        }
+
+        var download = new scPageSaver.scDownload(currentURI);
+        if(currentURI.type == 'index') download.charset = this._doc.characterSet; // Set character set from document
+        this._downloads.push(download);
+        download.download(this._downloadFinished, this);
+
+        this._currentURIIndex++;
+        this._simultaneousDownloads++;
+    }
+};
+
+/**
+ * Download completion callback
+ * @function _downloadFinished
+ */
+scPageSaver.prototype._downloadFinished = function() {
+    this._simultaneousDownloads--;
+
     // Stop downloading if beyond end of uri list
     if(this._currentURIIndex >= this._uris.length) {
-        this._processNextURI();
-        return;
-    }
+        if(this._simultaneousDownloads == 0) {
+            // Downloading finished so start the processor
+            this._timers.download.finish = new Date();
 
-    var currentURI = this._uris[this._currentURIIndex];
-
-    // Skip dupes
-    if(currentURI.dupe) {
-        this._currentURIIndex++;
+            this._timers.process = {start: new Date(), finish: null};
+            this._processNextURI();
+        }
+    } else {
         this._downloadNextURI();
-        return;
     }
-
-    var download = new scPageSaver.scDownload(currentURI);
-    if(currentURI.type == 'index') download.charset = this._doc.characterSet; // Set character set from document
-    this._downloads.push(download);
-    download.download(this._downloadNextURI, this);
-    this._currentURIIndex++;
-};
+}
 
 /**
  * Fixs the next URI in the stack and saves it to disk.
@@ -378,10 +404,16 @@ scPageSaver.prototype._processNextURI = function() {
  * @function _finished
  */
 scPageSaver.prototype._finished = function() {
+    this._timers.process.finish = new Date();
+
     if(this._callback) {
         var status = this._errors.length == 0 ? scPageSaver.SUCCESS : scPageSaver.FAILURE;
         this._callback(this, status, {warnings: this._warnings, errors: this._errors});
     }
+
+    savecomplete.dump('Extract -> '+(this._timers.extract.finish - this._timers.extract.start));
+    savecomplete.dump('Download -> '+(this._timers.download.finish - this._timers.download.start));
+    savecomplete.dump('Processing -> '+(this._timers.process.finish - this._timers.process.start));
 
     this._uris = null;
     this._downloads = null;
