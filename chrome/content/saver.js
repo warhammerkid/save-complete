@@ -100,6 +100,7 @@ scPageSaver.prototype.run = function(callback) {
     this._transfer = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);
     this._transfer.init(this._uri, scPageSaver.nsIIOService.newFileURI(this._file), "", null, null, null, this);
     this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_START | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
+    this._transfer.onProgressChange64(null, null, 0, 1, 0, 1);
 
     try {
         this._timers.extract = {start: new Date(), finish: null};
