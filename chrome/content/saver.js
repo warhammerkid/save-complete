@@ -68,13 +68,14 @@ scPageSaver.FAILURE = 'failure';
 /* XPCOM Shortcuts */
 scPageSaver.nsIIOService = Components.classes["@mozilla.org/network/io-service;1"].getService(Components.interfaces.nsIIOService);
 scPageSaver.nsIRequest = Components.interfaces.nsIRequest;
+scPageSaver.webProgress = Components.interfaces.nsIWebProgressListener;
 /* Constants */
 scPageSaver.cssURIRegex = /url\(\s*(["']?)([^)"' \n\r\t]+)\1\s*\)/gm;
 scPageSaver.STYLE_RULE = 1;
 scPageSaver.IMPORT_RULE = 3;
 scPageSaver.MEDIA_RULE = 4;
 scPageSaver.DEFAULT_CHARSET = "ISO-8859-1";
-scPageSaver.DEFAULT_WRITE_CHARSET = "UTF-8"
+scPageSaver.DEFAULT_WRITE_CHARSET = "UTF-8";
 
 /**
  * Starts the saving process. Calls the callback when done saving or if it failed
@@ -96,6 +97,10 @@ scPageSaver.prototype.run = function(callback) {
 
     this._timers = {};
 
+    this._transfer = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);
+    this._transfer.init(this._uri, scPageSaver.nsIIOService.newFileURI(this._file), "", null, null, null, this);
+    this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_START | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
+
     try {
         this._timers.extract = {start: new Date(), finish: null};
         this._extractURIs();
@@ -108,6 +113,32 @@ scPageSaver.prototype.run = function(callback) {
         this._finished();
     }
 };
+
+/**
+ * Cancels the currently in progress saver
+ * @function cancel
+ * @param {optional nsresult} reason - The reason why the operation was canceled
+ */
+scPageSaver.prototype.cancel = function(reason) {
+    clearTimeout(this._processorTimeout);
+    for(var i = 0; i < this._downloads.length; i++) {
+        this._downloads[i].cancel();
+    }
+    this._errors.push('Download canceled by user');
+    this._finished();
+}
+
+/**
+ * QueryInterface function to allow passing as cancelable to transfer
+ * @function QueryInterface
+ * @param {Object} iid - The interface to convert to
+ */
+scPageSaver.prototype.QueryInterface = function(iid) {
+    if(iid.equals(Components.interfaces.nsICancelable)) {
+        return this;
+    }
+    throw Components.results.NS_ERROR_NO_INTERFACE;
+},
 
 /**
  * Extracts all URIs from the document, tagging them and storing them for processing.
@@ -238,6 +269,9 @@ scPageSaver.prototype._downloadNextURI = function() {
  */
 scPageSaver.prototype._downloadFinished = function() {
     this._simultaneousDownloads--;
+    var progress = this._downloads.length - this._simultaneousDownloads;
+    var maxProgress = this._uris.length;
+    this._transfer.onProgressChange64(null, null, progress, maxProgress, progress, maxProgress);
 
     // Stop downloading if beyond end of uri list
     if(this._currentURIIndex >= this._uris.length) {
@@ -270,7 +304,7 @@ scPageSaver.prototype._processNextURI = function() {
     if(download.failed) {
         this.errors.push("Download failed for uri: "+download.uri);
         this._currentDownloadIndex++;
-        setTimeout(function() { me._processNextURI();}, 2);
+        this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
         return;
     }
 
@@ -396,7 +430,7 @@ scPageSaver.prototype._processNextURI = function() {
     download.contents = ""; // For some small clean up
 
     this._currentDownloadIndex++;
-    if(doContinue) setTimeout(function() { me._processNextURI();}, 2);
+    if(doContinue) this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
 };
 
 /**
@@ -404,16 +438,18 @@ scPageSaver.prototype._processNextURI = function() {
  * @function _finished
  */
 scPageSaver.prototype._finished = function() {
-    this._timers.process.finish = new Date();
+    if(this._timers.process) this._timers.process.finish = new Date();
 
     if(this._callback) {
         var status = this._errors.length == 0 ? scPageSaver.SUCCESS : scPageSaver.FAILURE;
         this._callback(this, status, {warnings: this._warnings, errors: this._errors});
     }
 
-    savecomplete.dump('Extract -> '+(this._timers.extract.finish - this._timers.extract.start));
-    savecomplete.dump('Download -> '+(this._timers.download.finish - this._timers.download.start));
-    savecomplete.dump('Processing -> '+(this._timers.process.finish - this._timers.process.start));
+    this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
+
+    if(this._timers.extract) savecomplete.dump('Extract -> '+(this._timers.extract.finish - this._timers.extract.start));
+    if(this._timers.download) savecomplete.dump('Download -> '+(this._timers.download.finish - this._timers.download.start));
+    if(this._timers.process) savecomplete.dump('Processing -> '+(this._timers.process.finish - this._timers.process.start));
 
     this._uris = null;
     this._downloads = null;
@@ -666,6 +702,23 @@ scPageSaver.scDownload.prototype.download = function(callback, thisObj) {
         this._done(true);
     }
 };
+
+/**
+ * Cancels the download if it's active.
+ * @function cancel
+ */
+scPageSaver.scDownload.prototype.cancel = function() {
+    if(this._channel) {
+        this._channel.cancel(Components.results.NS_BINDING_ABORTED);
+    }
+    this._channel = null;
+    this._loader = null;
+    this._callback = null;
+    this.failed = true;
+    this.contents = null;
+    this.contentType = null;
+    this.charset = null;
+}
 
 /**
  * Called when the downloading is done. Cleans up, and calls callback.
