@@ -1,0 +1,18 @@
+<!-- Translations for the preference panel -->
+
+<!-- Preference Window Title -->
+<!ENTITY window.title "Preferences">
+
+<!-- Preference Tab Labels -->
+<!ENTITY pane.main.label "General">
+<!ENTITY pane.advanced.label "Advanced">
+
+<!-- Preference Labels and Accesskeys -->
+<!ENTITY pref.context.label "Show menu item in context menu">
+<!ENTITY pref.context.accesskey "c">
+<!ENTITY pref.builtin.label "Replace Firefox save">
+<!ENTITY pref.builtin.accesskey "r">
+<!ENTITY pref.iframe.label "Save iframes">
+<!ENTITY pref.iframe.accesskey "i">
+<!ENTITY pref.objects.label "Save embeded objects, like flash or audio">
+<!ENTITY pref.objects.accesskey "o">

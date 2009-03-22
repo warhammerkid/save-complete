@@ -16,5 +16,7 @@
         <em:maxVersion>3.6a1pre</em:maxVersion>
       </Description>
     </em:targetApplication>
+
+    <em:optionsURL>chrome://savecomplete/content/prefs.xul</em:optionsURL>
   </Description>
 </RDF>
