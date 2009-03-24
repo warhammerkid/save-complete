@@ -50,6 +50,7 @@
  * @param {optional Object} options - Optional extracting and saving options
  * @... {Boolean} saveIframes - Pass in as true to have iframes processed - defaults to false
  * @... {Boolean} saveObjects - Pass in to have object, embed, and applet tags processed - defaults to false
+ * @... {Boolean} rewriteLinks - Pass in to have links rewritten to be absolute before saving
  */
 var scPageSaver = function(doc, file, dataFolder, options) {
     if(!options) options = {};
@@ -60,7 +61,7 @@ var scPageSaver = function(doc, file, dataFolder, options) {
     this._file = file;
 
     // Set options
-    this._options = {saveIframes: false, saveObjects: false}; // defaults
+    this._options = {saveIframes: false, saveObjects: false, rewriteLinks: false}; // defaults
     for(var prop in options) this._options[prop] = options[prop];
 
     if(file.exists() == false) file.create(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0644);
@@ -226,13 +227,13 @@ scPageSaver.prototype._extractURIs = function() {
         var results = null;
 
         // Extract link element refs (stylesheets)
-        var linkRe = /<link[^>]+href=(["'])([^"']*)\1/gm;
+        var linkRe = /<link[^>]+href=(["'])([^"']*)\1/igm;
         while((results = linkRe.exec(e.data)) != null) {
             this._uris.push(new scPageSaver.scURI(results[2], this._uri, 'attribute', 'base'));
         }
 
         // Extract script elements refs
-        var scriptRe = /<script[^>]+src=(["'])([^"']*)\1/gm;
+        var scriptRe = /<script[^>]+src=(["'])([^"']*)\1/igm;
         while((results = scriptRe.exec(e.data)) != null) {
             this._uris.push(new scPageSaver.scURI(results[2], this._uri, 'attribute', 'base'));
         }
@@ -426,15 +427,23 @@ scPageSaver.prototype._processNextURI = function() {
                 }
             }
 
-            // TODO: Fix anchors to point to absolute location instead of relative
+            // Fix anchors to point to absolute location instead of relative
+            if(this._options['rewriteLinks']) {
+                var me = this;
+                var replaceFunc = function() {
+                    var match = /^([^:]+):/.exec(arguments[0]);
+                    if(match && match[1] != 'http' && match[1] != 'https')
+                        return arguments[0];
+                    else
+                        return arguments[1]+arguments[2]+me._uri.resolve(arguments[3])+arguments[2];
+                }
+                data = data.replace(/(<a[^>]+href=)(["'])([^"']+)\2/igm, replaceFunc);
+            }
 
             // Save adjusted file
             this._writeFile(this._file, data, download.charset);
         } else {
             // Other HTML files, if found
-
-            // TODO: Fix anchors to point to absolute location instead of relative
-
             // Save adjusted file
             var fileObj = this._dataFolder.clone();
             fileObj.append(this._savePath(download.uri,false));

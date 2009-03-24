@@ -20,10 +20,12 @@
     <preferences>
       <preference id="prefIframes" name="extensions.savecomplete@perlprogrammer.com.save_iframes" type="bool"/>
       <preference id="prefObjects" name="extensions.savecomplete@perlprogrammer.com.save_objects" type="bool"/>
+      <preference id="prefLinks" name="extensions.savecomplete@perlprogrammer.com.rewrite_links" type="bool"/>
     </preferences>
     <groupbox>
       <checkbox preference="prefIframes" label="&pref.iframe.label;" accesskey="&pref.iframe.accesskey;" />
       <checkbox preference="prefObjects" label="&pref.objects.label;" accesskey="&pref.objects.accesskey;" />
+      <checkbox preference="prefLinks" label="&pref.links.label;" accesskey="&pref.links.accesskey;" />
     </groupbox>
   </prefpane>
 </prefwindow>

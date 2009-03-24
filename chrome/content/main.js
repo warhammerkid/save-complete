@@ -182,7 +182,8 @@ var savecomplete = {
         var PrefBranch = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
         return {
             saveIframes: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.save_iframes"),
-            saveObjects: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.save_objects")
+            saveObjects: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.save_objects"),
+            rewriteLinks: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.rewrite_links")
         };
     },
     /* Console logging functions */
