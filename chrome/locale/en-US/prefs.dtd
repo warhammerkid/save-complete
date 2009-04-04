@@ -8,9 +8,9 @@
 <!ENTITY pane.advanced.label "Advanced">
 
 <!-- Preference Labels and Accesskeys -->
-<!ENTITY pref.context.label "Show menu item in context menu">
+<!ENTITY pref.context.label "Show save complete option in context menu">
 <!ENTITY pref.context.accesskey "c">
-<!ENTITY pref.builtin.label "Replace Firefox built-in save command">
+<!ENTITY pref.builtin.label "Replace Firefox built-in complete webpage save command">
 <!ENTITY pref.builtin.accesskey "r">
 <!ENTITY pref.iframe.label "Save iframes">
 <!ENTITY pref.iframe.accesskey "i">

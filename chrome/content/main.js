@@ -49,6 +49,11 @@ var savecomplete = {
         // Make sure not called again and the listener is cleaned up
         window.removeEventListener('load',savecomplete.onload, true);
 
+        // Set up preference change observer
+        savecomplete.prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.savecomplete@perlprogrammer.com.");
+        savecomplete.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);
+        savecomplete.prefs.addObserver("", savecomplete, false);
+
         // Hook context menu to contextShow
         var contextMenu = document.getElementById('contentAreaContextMenu');
         contextMenu.addEventListener('popupshowing', savecomplete.contextShow, true);
@@ -56,12 +61,11 @@ var savecomplete = {
         savecomplete.updateUIFromPrefs();
     },
     updateUIFromPrefs: function() {
-        var PrefBranch = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
-
-        var replaceBuiltin = PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.replace_builtin");
+        savecomplete.dump('Updating UI from preferences');
+        var replaceBuiltin = savecomplete.prefs.getBoolPref('replace_builtin');
 
         // Show in context menu if the preference for it is set and replace builtin is not on
-        savecomplete.showInContext = !replaceBuiltin && PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.context");
+        savecomplete.showInContext = !replaceBuiltin && savecomplete.prefs.getBoolPref('context');
 
         // Replace built-in save if preference is set
         var builtinSaveCommand = document.getElementById('Browser:SavePage');
@@ -169,7 +173,7 @@ var savecomplete = {
             }
         }
 
-        if(savecomplete.DEBUG_MODE) savecomplete.dumpObj(messages);
+        savecomplete.dumpObj(messages);
     },
     getDirFromFile: function(file) {
         // Returns a reference to the save directory through the given file
@@ -179,19 +183,32 @@ var savecomplete = {
         return dir;
     },
     getSaverOptions: function() {
-        var PrefBranch = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
         return {
-            saveIframes: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.save_iframes"),
-            saveObjects: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.save_objects"),
-            rewriteLinks: PrefBranch.getBoolPref("extensions.savecomplete@perlprogrammer.com.rewrite_links")
+            saveIframes: savecomplete.prefs.getBoolPref('save_iframes'),
+            saveObjects: savecomplete.prefs.getBoolPref('save_objects'),
+            rewriteLinks: savecomplete.prefs.getBoolPref('rewrite_links')
         };
     },
+    observe: function(subject, topic, data) {
+        // Observer for pref changes
+        if (topic != "nsPref:changed") return;
+
+        savecomplete.dump('Pref changed: '+data);
+        switch(data) {
+            case 'context':
+            case 'replace_builtin':
+                savecomplete.updateUIFromPrefs();
+                break;
+        }
+   },
     /* Console logging functions */
     dump: function(message) { // Debuging function -- prints to javascript console
+        if(!savecomplete.DEBUG_MODE) return;
         var ConsoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
         ConsoleService.logStringMessage(message);
     },
     dumpObj: function(obj) {
+        if(!savecomplete.DEBUG_MODE) return;
         var str = "";
         for(i in obj) {
             try {

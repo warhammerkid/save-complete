@@ -8,12 +8,12 @@
 <prefwindow id="BrowserPreferences" title="&window.title;" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" onload="">
   <prefpane id="paneMain" label="&pane.main.label;">
     <preferences>
-      <preference id="prefContext" name="extensions.savecomplete@perlprogrammer.com.context" type="bool"/>
       <preference id="prefBuiltin" name="extensions.savecomplete@perlprogrammer.com.replace_builtin" type="bool"/>
+      <preference id="prefContext" name="extensions.savecomplete@perlprogrammer.com.context" type="bool"/>
     </preferences>
     <groupbox>
-      <checkbox preference="prefContext" label="&pref.context.label;" accesskey="&pref.context.accesskey;" />
       <checkbox preference="prefBuiltin" label="&pref.builtin.label;" accesskey="&pref.builtin.accesskey;" />
+      <checkbox preference="prefContext" label="&pref.context.label;" accesskey="&pref.context.accesskey;" />
     </groupbox>
   </prefpane>
   <prefpane id="paneAdvanced" label="&pane.advanced.label;">
