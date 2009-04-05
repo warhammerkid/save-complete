@@ -822,7 +822,6 @@ scPageSaver.scDownload.UnicharObserver.prototype.onDetermineCharset = function (
 scPageSaver.scDownload.UnicharObserver.prototype.onStreamComplete = function (loader, context, status, unicharData) {
     switch (status) {
         case Components.results.NS_OK:
-            savecomplete.dump('Status is okay: '+this._download.uri);
             var str = "";
             try {
                 if (unicharData) {
