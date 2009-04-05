@@ -97,7 +97,6 @@ scPageSaver.DEFAULT_WRITE_CHARSET = "UTF-8";
 scPageSaver.prototype.run = function(callback) {
     this._callback = callback;
     this._errors = [];
-    this._warnings = [];
     this._simultaneousDownloads = 0;
     this._currentURIIndex = 0;
     this._uris = [];
@@ -351,7 +350,7 @@ scPageSaver.prototype._downloadFinished = function() {
 }
 
 /**
- * Fixs the next URI in the stack and saves it to disk.
+ * Fixes the next URI in the stack and saves it to disk.
  * @function _processNextURI
  */
 scPageSaver.prototype._processNextURI = function() {
@@ -495,7 +494,7 @@ scPageSaver.prototype._processNextURI = function() {
             this._errors.push('Error persisting URI: '+download.uri+"\n"+e);
         }
     } else {
-        this._warnings.push('Missing contentType: '+download.uri);
+        this._errors.push('Missing contentType: '+download.uri);
     }
 
     download.contents = ""; // For some small clean up
@@ -513,7 +512,7 @@ scPageSaver.prototype._finished = function() {
 
     if(this._callback) {
         var status = this._errors.length == 0 ? scPageSaver.SUCCESS : scPageSaver.FAILURE;
-        this._callback(this, status, {warnings: this._warnings, errors: this._errors, timers: this._timers});
+        this._callback(this, status, {errors: this._errors, timers: this._timers});
     }
 
     this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
@@ -523,7 +522,6 @@ scPageSaver.prototype._finished = function() {
     this._persists = null;
     this._callback = null;
     this._saveMap = null;
-    this._warnings = null;
     this._errors = null;
     this._timers = null;
 }
@@ -824,6 +822,7 @@ scPageSaver.scDownload.UnicharObserver.prototype.onDetermineCharset = function (
 scPageSaver.scDownload.UnicharObserver.prototype.onStreamComplete = function (loader, context, status, unicharData) {
     switch (status) {
         case Components.results.NS_OK:
+            savecomplete.dump('Status is okay: '+this._download.uri);
             var str = "";
             try {
                 if (unicharData) {
@@ -844,6 +843,8 @@ scPageSaver.scDownload.UnicharObserver.prototype.onStreamComplete = function (lo
             this._download._done();
             break;
         default:
+            // Download failed
+            this._download._done(true);
             break;
     }
 };
