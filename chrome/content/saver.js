@@ -296,7 +296,7 @@ scPageSaver.prototype._extractURIsFromStyleSheet = function(styleSheet, importPa
             while((results = scPageSaver.cssURIRegex.exec(rule.cssText)) != null) {
                 this._uris.push(new scPageSaver.scURI(results[2], importPath, 'css', inline?'base':'extcss'));
             }
-        } else if(rule.type == savecomplete.MEDIA_RULE) {
+        } else if(rule.type == scPageSaver.MEDIA_RULE) {
             this._extractURIsFromStyleSheet(rule, importPath, inline);
         }
     }
@@ -310,20 +310,19 @@ scPageSaver.prototype._downloadNextURI = function() {
     // 4 simultaneous "downloads" max
     while(this._simultaneousDownloads < 4 && this._currentURIIndex < this._uris.length) {
         var currentURI = this._uris[this._currentURIIndex];
+        this._currentURIIndex++;
 
         // Skip dupes
         if(currentURI.dupe) {
-            this._currentURIIndex++;
             continue;
         }
 
         var download = new scPageSaver.scDownload(currentURI);
         if(currentURI.type == 'index') download.charset = this._doc.characterSet; // Set character set from document
         this._downloads.push(download);
-        download.download(this._downloadFinished, this);
-
-        this._currentURIIndex++;
         this._simultaneousDownloads++;
+
+        download.download(this._downloadFinished, this);
     }
 };
 
@@ -366,7 +365,7 @@ scPageSaver.prototype._processNextURI = function() {
     var download = this._downloads[this._currentDownloadIndex];
     var data = download.contents;
     if(download.failed) {
-        this.errors.push("Download failed for uri: "+download.uri);
+        this._errors.push("Download failed for uri: "+download.uri);
         this._currentDownloadIndex++;
         this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
         return;
@@ -518,10 +517,6 @@ scPageSaver.prototype._finished = function() {
     }
 
     this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
-
-    if(this._timers.extract) savecomplete.dump('Extract -> '+(this._timers.extract.finish - this._timers.extract.start));
-    if(this._timers.download) savecomplete.dump('Download -> '+(this._timers.download.finish - this._timers.download.start));
-    if(this._timers.process) savecomplete.dump('Processing -> '+(this._timers.process.finish - this._timers.process.start));
 
     this._uris = null;
     this._downloads = null;
