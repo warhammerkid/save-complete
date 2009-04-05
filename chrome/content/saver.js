@@ -739,7 +739,6 @@ scPageSaver.scDownload.prototype.download = function(callback, thisObj) {
         this._loader = Components.classes["@mozilla.org/network/unichar-stream-loader;1"].createInstance(Components.interfaces.nsIUnicharStreamLoader);
         this._channel = scPageSaver.nsIIOService.newChannel(fileURI, "", null);
     } catch(e) {
-        //glLogger.log("Error with <" + fileURI + "> newURI/newChannel\n" + e, 'scDownload');
         this._done(true);
         return;
     }
@@ -758,13 +757,12 @@ scPageSaver.scDownload.prototype.download = function(callback, thisObj) {
             uploadChannel.setUploadStream(inputStream, "application/x-www-form-urlencoded", -1);
             this._channel.QueryInterface(Components.interfaces.nsIHttpChannel).requestMethod = "POST";
         }
-    } catch (e) { /*glLogger.log("POST data error on url: " + fileURI + "\n" + e);*/ }
+    } catch (e) {}
 
     try {
         this._loader.init(new scPageSaver.scDownload.UnicharObserver(this), null);
         this._channel.asyncOpen(this._loader, null);
     } catch(e) {
-        //glLogger.log("Error with loader: uri " + this.uri.toString() + "\n" + e);
         this._done(true);
     }
 };
@@ -829,7 +827,6 @@ scPageSaver.scDownload.UnicharObserver.prototype.onStreamComplete = function (lo
                     while (unicharData.readString(-1, str_)) str += str_.value;
                 }
             } catch (e) {
-                //glLogger.log("Unichar observer data read error: "+e, 'unichar-observer');
                 this._download._done(true);
                 return;
             }
