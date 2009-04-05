@@ -513,7 +513,7 @@ scPageSaver.prototype._finished = function() {
 
     if(this._callback) {
         var status = this._errors.length == 0 ? scPageSaver.SUCCESS : scPageSaver.FAILURE;
-        this._callback(this, status, {warnings: this._warnings, errors: this._errors});
+        this._callback(this, status, {warnings: this._warnings, errors: this._errors, timers: this._timers});
     }
 
     this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
@@ -525,6 +525,7 @@ scPageSaver.prototype._finished = function() {
     this._saveMap = null;
     this._warnings = null;
     this._errors = null;
+    this._timers = null;
 }
 
 /**

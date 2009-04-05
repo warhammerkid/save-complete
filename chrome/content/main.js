@@ -36,7 +36,6 @@
 
 var savecompleteStrings = Components.classes["@mozilla.org/intl/stringbundle;1"].getService(Components.interfaces.nsIStringBundleService).createBundle("chrome://savecomplete/locale/save_complete.properties");
 var savecomplete = {
-    VERSION: '0.9b11',
     DEBUG_MODE: false,
     savers: [],
     /* Translateable Strings */
