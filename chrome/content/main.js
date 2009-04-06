@@ -122,7 +122,7 @@ var savecomplete = {
 
         var saver = new scPageSaver(focusedWindow.document, fp.file, savecomplete.getDirFromFile(fp.file), savecomplete.getSaverOptions());
         savecomplete.savers.push(saver);
-        saver.run(savecomplete.saverComplete);
+        saver.run();
     },
     overrideSave: function() { // Called by overridden internal Firefox save
         /* overrideSave overrides functions defined in contentAreaUtils.js to
@@ -152,7 +152,7 @@ var savecomplete = {
                 savecomplete.dump('Using savecomplete save instead of firefox save');
                 var saver = new scPageSaver(doc, fpParams.file, savecomplete.getDirFromFile(fpParams.file), savecomplete.getSaverOptions());
                 savecomplete.savers.push(saver);
-                saver.run(savecomplete.saverComplete);
+                saver.run();
                 return false;
             }
 
@@ -185,7 +185,8 @@ var savecomplete = {
         return {
             saveIframes: savecomplete.prefs.getBoolPref('save_iframes'),
             saveObjects: savecomplete.prefs.getBoolPref('save_objects'),
-            rewriteLinks: savecomplete.prefs.getBoolPref('rewrite_links')
+            rewriteLinks: savecomplete.prefs.getBoolPref('rewrite_links'),
+            callback: savecomplete.saverComplete
         };
     },
     observe: function(subject, topic, data) {

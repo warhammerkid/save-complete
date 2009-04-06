@@ -47,31 +47,53 @@
  * @param {Document} doc - The document object for the page to be saved
  * @param {nsIFile} file - The ouput file for the HTML
  * @param {nsIFile} dataFolder - The output folder for all additional page data
- * @param {optional Object} options - Optional extracting and saving options
+ * @param {optional Object} options - Any optional data that affects the save, from settings to callbacks
  * @... {Boolean} saveIframes - Pass in as true to have iframes processed - defaults to false
  * @... {Boolean} saveObjects - Pass in to have object, embed, and applet tags processed - defaults to false
  * @... {Boolean} rewriteLinks - Pass in to have links rewritten to be absolute before saving
+ * @... {Function} callback - The optional callback on save completion
+ * @... {Object} progressListener - Progress listener that can QueryInterface to nsIWebProgressListener2.
+ *                                  Pass false to prevent the progress from showing in the download manager.
  */
 var scPageSaver = function(doc, file, dataFolder, options) {
     if(!options) options = {};
 
+    this._ran = false;
     this._url = doc.location.href;
     this._uri = scPageSaver.nsIIOService.newURI(this._url, null, null);
     this._doc = doc;
     this._file = file;
 
-    // Set options
-    this._options = {saveIframes: false, saveObjects: false, rewriteLinks: false}; // defaults
-    for(var prop in options) this._options[prop] = options[prop];
-
     if(file.exists() == false) file.create(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0644);
 
-    // Delete and re-create dataFolder
+    // Delete and re-create dataFolder so that it is clean
     var dataFolderBackup = dataFolder.parent;
     var folderName = dataFolder.leafName;
     if (dataFolder.exists()) dataFolder.remove(true);
     dataFolderBackup.append(folderName);
     this._dataFolder = dataFolderBackup;
+
+    // Extract data from options
+    this._callback = options['callback'];
+    delete options['callback'];
+
+    if(options.hasOwnProperty('progressListener')) {
+        if(options['progressListener'] !== false) {
+            this._listener = options['progressListener'].QueryInterface(Components.interfaces.nsIWebProgressListener2);
+        }
+        delete options['progressListener'];
+    } else {
+        this._listener = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);
+        this._listener.init(this._uri, scPageSaver.nsIIOService.newFileURI(this._file), "", null, null, null, this);
+    }
+
+    // Optional settings
+    this._options = { // Defaults
+        saveIframes: false,
+        saveObjects: false,
+        rewriteLinks: false
+    };
+    for(var prop in options) this._options[prop] = options[prop];
 }
 
 scPageSaver.SUCCESS = 'success';
@@ -92,10 +114,13 @@ scPageSaver.DEFAULT_WRITE_CHARSET = "UTF-8";
  * Starts the saving process. Calls the callback when done saving or if it failed
  * with a status code as the first parameter.
  * @function run
- * @param {optional Function} callback - The optional callback on save completion
  */
-scPageSaver.prototype.run = function(callback) {
-    this._callback = callback;
+scPageSaver.prototype.run = function() {
+    // Force run to only be called once
+    if(this._ran) throw new Error('Cannot run more than once');
+    this._ran = true;
+
+    // Initialize data
     this._errors = [];
     this._simultaneousDownloads = 0;
     this._currentURIIndex = 0;
@@ -104,14 +129,15 @@ scPageSaver.prototype.run = function(callback) {
     this._downloads = [];
     this._persists = [];
     this._saveMap = {};
-
     this._timers = {};
 
-    this._transfer = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);
-    this._transfer.init(this._uri, scPageSaver.nsIIOService.newFileURI(this._file), "", null, null, null, this);
-    this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_START | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
-    this._transfer.onProgressChange64(null, null, 0, 1, 0, 1);
+    // Notify listener that we are starting and bump the progress change so if it's a transfer it shows up
+    if(this._listener) {
+        this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_START | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
+        this._listener.onProgressChange64(null, null, 0, 1, 0, 1);
+    }
 
+    // Start the process, running the extract, and then starting the downloader
     try {
         this._timers.extract = {start: new Date(), finish: null};
         this._extractURIs();
@@ -331,9 +357,11 @@ scPageSaver.prototype._downloadNextURI = function() {
  */
 scPageSaver.prototype._downloadFinished = function() {
     this._simultaneousDownloads--;
-    var progress = this._downloads.length - this._simultaneousDownloads;
-    var maxProgress = this._uris.length;
-    this._transfer.onProgressChange64(null, null, progress, maxProgress, progress, maxProgress);
+    if(this._listener) {
+        var progress = this._downloads.length - this._simultaneousDownloads;
+        var maxProgress = this._uris.length;
+        this._listener.onProgressChange64(null, null, progress, maxProgress, progress, maxProgress);
+    }
 
     // Stop downloading if beyond end of uri list
     if(this._currentURIIndex >= this._uris.length) {
@@ -515,8 +543,9 @@ scPageSaver.prototype._finished = function() {
         this._callback(this, status, {errors: this._errors, timers: this._timers});
     }
 
-    this._transfer.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
+    if(this._listener) this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
 
+    this._listener = null;
     this._uris = null;
     this._downloads = null;
     this._persists = null;
