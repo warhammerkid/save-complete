@@ -3,6 +3,7 @@
 <!ENTITY menuitem.save.accesskey.filemenu "">
 <!ENTITY menuitem.save.accesskey.contextmenu "C">
 
-<!-- Save Complete Save Command -->
+<!-- Save Complete save command keyboard shortcut -->
+<!-- accel means either the control key or the command key on a mac -->
 <!ENTITY command.save.key "S">
 <!ENTITY command.save.modifiers "accel shift">
