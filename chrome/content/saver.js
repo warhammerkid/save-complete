@@ -58,7 +58,18 @@
 var scPageSaver = function(doc, file, dataFolder, options) {
     if(!options) options = {};
 
+    // Initialize data
     this._ran = false;
+    this._warnings = [];
+    this._errors = [];
+    this._simultaneousDownloads = 0;
+    this._currentURIIndex = 0;
+    this._uris = [];
+    this._currentDownloadIndex = 0;
+    this._downloads = [];
+    this._persists = [];
+    this._saveMap = {};
+    this._timers = {};
     this._url = doc.location.href;
     this._uri = scPageSaver.nsIIOService.newURI(this._url, null, null);
     this._doc = doc;
@@ -119,17 +130,6 @@ scPageSaver.prototype.run = function() {
     // Force run to only be called once
     if(this._ran) throw new Error('Cannot run more than once');
     this._ran = true;
-
-    // Initialize data
-    this._errors = [];
-    this._simultaneousDownloads = 0;
-    this._currentURIIndex = 0;
-    this._uris = [];
-    this._currentDownloadIndex = 0;
-    this._downloads = [];
-    this._persists = [];
-    this._saveMap = {};
-    this._timers = {};
 
     // Notify listener that we are starting and bump the progress change so if it's a transfer it shows up
     if(this._listener) {
@@ -392,7 +392,7 @@ scPageSaver.prototype._processNextURI = function() {
     var download = this._downloads[this._currentDownloadIndex];
     var data = download.contents;
     if(download.failed) {
-        this._errors.push("Download failed for uri: "+download.uri);
+        this._warnings.push("Download failed for uri: "+download.uri);
         this._currentDownloadIndex++;
         this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
         return;
@@ -467,7 +467,11 @@ scPageSaver.prototype._processNextURI = function() {
             }
 
             // Save adjusted file
-            this._writeFile(this._file, data, download.charset);
+            if(!this._writeFile(this._file, data, download.charset)) {
+                this._errors.push('Failed to write main file');
+                this.cancel(0);
+                return;
+            }
         } else {
             // Other HTML files, if found
             // Save adjusted file
@@ -502,12 +506,12 @@ scPageSaver.prototype._processNextURI = function() {
         // Save adjusted stylesheet
         var fileObj = this._dataFolder.clone();
         fileObj.append(this._savePath(download.uri,false));
-        this._writeFile(fileObj, data, download.charset);
+        if(!this._writeFile(fileObj, data, download.charset)) this._warnings.push('Could not save: '+download.uri);
     } else if(/^text\//.test(download.contentType) || download.contentType == 'application/x-javascript') {
         // Had problems with nsWebBrowserPersist and text files, so for now I'll do the saving
         var fileObj = this._dataFolder.clone();
         fileObj.append(this._savePath(download.uri,false));
-        this._writeFile(fileObj, data, download.charset);
+        if(!this._writeFile(fileObj, data, download.charset)) this._warnings.push('Could not save: '+download.uri);
     } else if(download.contentType != "") {
         // Something we aren't processing so use nsWebBrowserPersist, because it always works
         var persist = Components.classes["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Components.interfaces.nsIWebBrowserPersist);
@@ -519,10 +523,10 @@ scPageSaver.prototype._processNextURI = function() {
             this._persists.push(persist); // Just so we retain a reference to it
             doContinue = false; // Calling _processNextURI handled by persist listener
         } catch(e) {
-            this._errors.push('Error persisting URI: '+download.uri+"\n"+e);
+            this._warnings.push('Error persisting URI: '+download.uri+"\n"+e);
         }
     } else {
-        this._errors.push('Missing contentType: '+download.uri);
+        this._warnings.push('Missing contentType: '+download.uri);
     }
 
     download.contents = ""; // For some small clean up
@@ -542,7 +546,7 @@ scPageSaver.prototype._finished = function() {
 
     if(this._callback) {
         var status = this._errors.length == 0 ? scPageSaver.SUCCESS : scPageSaver.FAILURE;
-        this._callback(this, status, {result: nsResult, errors: this._errors, timers: this._timers});
+        this._callback(this, status, {result: nsResult, warnings: this._warnings, errors: this._errors, timers: this._timers});
     }
 
     if(this._listener) this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, nsResult);
@@ -554,6 +558,7 @@ scPageSaver.prototype._finished = function() {
     this._callback = null;
     this._saveMap = null;
     this._errors = null;
+    this._warnings = null;
     this._timers = null;
 }
 
@@ -565,6 +570,7 @@ scPageSaver.prototype._finished = function() {
  * @param {String} charset - The file character set
  */
 scPageSaver.prototype._writeFile = function(file, contents, charset) {
+    var failed = false;
     var foStream = Components.classes['@mozilla.org/network/file-output-stream;1'].createInstance(Components.interfaces.nsIFileOutputStream);
     var flags = 0x02 | 0x08 | 0x20;
     if(!charset) charset = scPageSaver.DEFAULT_WRITE_CHARSET;
@@ -575,9 +581,10 @@ scPageSaver.prototype._writeFile = function(file, contents, charset) {
         os.writeString(contents);
         os.close();
     } catch(e) {
-        this._errors.push("Couldn't save "+file.leafName+"\n"+e);
+        failed = true;
     }
     foStream.close();
+    return !failed;
 };
 
 /**
