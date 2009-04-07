@@ -133,7 +133,7 @@ scPageSaver.prototype.run = function() {
 
     // Notify listener that we are starting and bump the progress change so if it's a transfer it shows up
     if(this._listener) {
-        this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_START | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
+        this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_START | scPageSaver.webProgress.STATE_IS_NETWORK, Components.results.NS_OK);
         this._listener.onProgressChange64(null, null, 0, 1, 0, 1);
     }
 
@@ -538,12 +538,14 @@ scPageSaver.prototype._processNextURI = function() {
 scPageSaver.prototype._finished = function() {
     if(this._timers.process) this._timers.process.finish = new Date();
 
+    var nsResult = this._errors.length == 0 ? Components.results.NS_OK : Components.results.NS_ERROR_FAILURE;
+
     if(this._callback) {
         var status = this._errors.length == 0 ? scPageSaver.SUCCESS : scPageSaver.FAILURE;
-        this._callback(this, status, {errors: this._errors, timers: this._timers});
+        this._callback(this, status, {result: nsResult, errors: this._errors, timers: this._timers});
     }
 
-    if(this._listener) this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, 1);
+    if(this._listener) this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, nsResult);
 
     this._listener = null;
     this._uris = null;
