@@ -154,14 +154,27 @@ scPageSaver.prototype.run = function() {
 /**
  * Cancels the currently in progress saver
  * @function cancel
- * @param {optional nsresult} reason - The reason why the operation was canceled
+ * @param {nsresult} reason - The reason why the operation was canceled
  */
 scPageSaver.prototype.cancel = function(reason) {
     clearTimeout(this._processorTimeout);
     for(var i = 0; i < this._downloads.length; i++) {
         this._downloads[i].cancel();
     }
-    this._errors.push('Download canceled by user');
+    // Report the reason
+    switch (reason) {
+        case 0:
+            // This value is used when the operation is canceled internally.
+            // The error has already been reported.
+            break;
+        case Components.results.NS_BINDING_ABORTED:
+            this._errors.push('Download canceled by user');
+            break;
+        default:
+            this._errors.push('Download canceled because of an error: '+reason);
+            break;
+    }
+    // Notify the listeners and clean up
     this._finished();
 }
 
