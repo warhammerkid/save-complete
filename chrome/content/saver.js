@@ -392,9 +392,16 @@ scPageSaver.prototype._processNextURI = function() {
     var download = this._downloads[this._currentDownloadIndex];
     var data = download.contents;
     if(download.failed) {
-        this._warnings.push("Download failed for uri: "+download.uri);
-        this._currentDownloadIndex++;
-        this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
+        if(dowwnload.uri.type == 'index') {
+            // TODO: Move to before downloader finishes so that we can cancel early
+            this._errors.push('Failed to download main file');
+            this.cancel(0);
+        } else {
+            this._warnings.push("Download failed for uri: "+download.uri);
+            this._currentDownloadIndex++;
+            this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
+        }
+
         return;
     }
 
