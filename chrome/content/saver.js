@@ -35,6 +35,31 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
+********** NOTES: ***********
+- File Saver component
+  - Path calculation
+  - File writing
+- File Provider component
+  - Provides downloading for a given file
+
+- Re-structure scPageSaver constructor
+  - scPageSaver(doc, fileSaver, fileProvider, options);
+- Create default fileSaver component
+  - Default one initialized with the nsIFile for output and the nsIFile for the data folder
+  - Provides documentPath(uri, relativeURI)
+  - Provides saveURIContents(uri, contents, charset)
+  - Provides saveURI(uri) // Use nsIWebBrowserPersist to save files that don't need a charset save
+- Create default fileProvider component
+  - Input: uri
+  - Output: contents (if real file), contentType, charset, uri object
+  - Provides createDownload(uri)
+    - Returns a download object
+    - Has a start method that takes a thisObj and callback function
+    - Has a stop method which should cancel the download
+*/
+
+
 /**
  * A page saver that saves the entire page after collecting all files it can from
  * the document and associated stylesheets.
