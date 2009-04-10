@@ -1,0 +1,17 @@
+<!--  -->
+<!--  -->
+<!ENTITY window.title "Preferências">
+<!--  -->
+<!ENTITY pane.main.label "Geral">
+<!ENTITY pane.advanced.label "Avançado">
+<!--  -->
+<!ENTITY pref.context.label "Exibir opção de salvar completo no menu de contexto">
+<!ENTITY pref.context.accesskey "c">
+<!ENTITY pref.builtin.label "Substituir comando de salvar página completa interna do Firefox">
+<!ENTITY pref.builtin.accesskey "S">
+<!ENTITY pref.iframe.label "Salvar iframes">
+<!ENTITY pref.iframe.accesskey "i">
+<!ENTITY pref.objects.label "Salvar objetos embutidos, como flash e áudio">
+<!ENTITY pref.objects.accesskey "o">
+<!ENTITY pref.links.label "Ajustar links para que não apontem para o lugar errado [Experimental]">
+<!ENTITY pref.links.accesskey "l">

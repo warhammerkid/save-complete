@@ -1,0 +1,17 @@
+<!--  -->
+<!--  -->
+<!ENTITY window.title "Možnosti">
+<!--  -->
+<!ENTITY pane.main.label "Hlavné">
+<!ENTITY pane.advanced.label "Rozšírené">
+<!--  -->
+<!ENTITY pref.context.label "Zobraziť možnosti rozšírenia v kontextovej ponuke">
+<!ENTITY pref.context.accesskey "Z">
+<!ENTITY pref.builtin.label "Nahradí vo Firefoxe zabudovaný príkaz na uloženie kompletnej webovej stránky">
+<!ENTITY pref.builtin.accesskey "N">
+<!ENTITY pref.iframe.label "Uložiť prvky iframe">
+<!ENTITY pref.iframe.accesskey "U">
+<!ENTITY pref.objects.label "Uložiť vložené objekty ako flash video alebo hudba">
+<!ENTITY pref.objects.accesskey "v">
+<!ENTITY pref.links.label "Upraviť odkazy tak, aby neodkazovali na nesprávne miesto [experimentálne]">
+<!ENTITY pref.links.accesskey "o">

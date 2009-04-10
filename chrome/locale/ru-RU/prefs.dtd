@@ -1,0 +1,17 @@
+<!--  -->
+<!--  -->
+<!ENTITY window.title "Настройки">
+<!--  -->
+<!ENTITY pane.main.label "Основные">
+<!ENTITY pane.advanced.label "Дополнительные">
+<!--  -->
+<!ENTITY pref.context.label "Показывать в контекстном меню">
+<!ENTITY pref.context.accesskey "а">
+<!ENTITY pref.builtin.label "Использовать взамен стандартного сохранения">
+<!ENTITY pref.builtin.accesskey "с">
+<!ENTITY pref.iframe.label "Сохранять фреймы">
+<!ENTITY pref.iframe.accesskey "я">
+<!ENTITY pref.objects.label "Сохранять внедрённые объекты (флеш, аудио)">
+<!ENTITY pref.objects.accesskey "н">
+<!ENTITY pref.links.label "Исправлять ссылки (Экспериментально)">
+<!ENTITY pref.links.accesskey "п">

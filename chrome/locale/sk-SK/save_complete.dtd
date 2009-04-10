@@ -1,1 +1,7 @@
-<!ENTITY save_complete.menuitem.save "Uložiť kompletnú stránku ako...">
+<!--  -->
+<!ENTITY menuitem.save.label "Uložiť celú stránku ako...">
+<!ENTITY menuitem.save.accesskey.filemenu "">
+<!ENTITY menuitem.save.accesskey.contextmenu "C">
+<!--  -->
+<!ENTITY command.save.key "U">
+<!ENTITY command.save.modifiers "accel shift">

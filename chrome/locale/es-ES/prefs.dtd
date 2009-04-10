@@ -1,0 +1,17 @@
+<!--  -->
+<!--  -->
+<!ENTITY window.title "Opciones">
+<!--  -->
+<!ENTITY pane.main.label "General">
+<!ENTITY pane.advanced.label "Avanzadas">
+<!--  -->
+<!ENTITY pref.context.label "Mostrar la opción guardar completa en el menú contextual">
+<!ENTITY pref.context.accesskey "c">
+<!ENTITY pref.builtin.label "Reemplazar la función incorporada de Firefox de guardar la página completa">
+<!ENTITY pref.builtin.accesskey "r">
+<!ENTITY pref.iframe.label "Guardar iframes">
+<!ENTITY pref.iframe.accesskey "i">
+<!ENTITY pref.objects.label "Guardar los objetos incluidos, como flash o audio">
+<!ENTITY pref.objects.accesskey "o">
+<!ENTITY pref.links.label "Ajustar los enlaces para que no apunten a un sitio incorrecto [Experimental]">
+<!ENTITY pref.links.accesskey "l">
