@@ -405,7 +405,7 @@ scPageSaver.prototype._processNextURI = function() {
     var download = this._downloads[this._currentDownloadIndex];
     var data = download.contents;
     if(download.failed) {
-        if(dowwnload.uri.type == 'index') {
+        if(download.uri.type == 'index') {
             // TODO: Move to before downloader finishes so that we can cancel early
             this._errors.push('Failed to download main file');
             this.cancel(0);
