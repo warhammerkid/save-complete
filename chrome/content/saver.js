@@ -45,11 +45,6 @@
 
 - Re-structure scPageSaver constructor
   - scPageSaver(doc, fileSaver, fileProvider, options);
-- Create default fileSaver component
-  - Default one initialized with the nsIFile for output and the nsIFile for the data folder
-  - Provides documentPath(uri, relativeURI)
-  - Provides saveURIContents(uri, contents, charset)
-  - Provides saveURI(uri) // Use nsIWebBrowserPersist to save files that don't need a charset save
 - Create default fileProvider component
   - Input: uri
   - Output: contents (if real file), contentType, charset, uri object
@@ -64,7 +59,7 @@
  * A page saver that saves the entire page after collecting all files it can from
  * the document and associated stylesheets.
  * @class scPageSaver
- */
+ {*/
 /**
  * Creates a page saver object and initalizes. Call {@link run} to start the
  * saving process.
@@ -626,6 +621,7 @@ scPageSaver.prototype._processDupes = function() {
 scPageSaver.prototype._regexEscape = function(str) {
     return str.replace(/([?+$&|./()\[\]^*])/g,"\\$1");
 };
+//}
 
 
 /**
@@ -635,7 +631,7 @@ scPageSaver.prototype._regexEscape = function(str) {
  * Saving is sequential, so it's not necessary to structure code to handle parallel
  * saves.
  * @class scPageSaver.scDefaultFileSaver
- */
+ {*/
 /**
  * Creates a file saver object
  * @constructor scPageSaver.scDefaultFileSaver
@@ -779,12 +775,13 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
     // Notify saver that we're done
     this._saveDoneCallback(uri, true);
 }
+//}
 
 
 /**
  * Simple URI data storage class
  * @class scPageSaver.scURI
- */
+ {*/
 /**
  * Creates a URI object.
  * @constructor scPageSaver.scURI
@@ -861,11 +858,13 @@ scPageSaver.scURI.compare = function(a,b) {
     if (a.toString() > b.toString()) return 1;
     return 0;
 };
+//}
+
 
 /**
  * Download data storage class
  * @class scPageSaver.scDownload
- */
+ {*/
 /**
  * Creates a download object.
  * @constructor scPageSaver.scDownload
@@ -953,10 +952,11 @@ scPageSaver.scDownload.prototype._done = function(failed) {
     this._callback = null;
 };
 
+
 /**
  * Download Observer which converts contents to unicode.
  * @class scPageSaver.scDownload.UnicharObserver
- */
+ {*/
 scPageSaver.scDownload.UnicharObserver = function (download) {
     this._download = download;
     this._charset = null;
@@ -999,11 +999,13 @@ scPageSaver.scDownload.UnicharObserver.prototype.onStreamComplete = function (lo
             break;
     }
 };
+//}
+//}
 
 /**
  * nsIWebBrowserPersist listener
  * @class scPageSaver.scPersistListener
- */
+ {*/
 scPageSaver.scPersistListener = function(fileSaver) {
     this._fileSaver = fileSaver;
 }
@@ -1023,3 +1025,4 @@ scPageSaver.scPersistListener.prototype.onProgressChange = function() {}
 scPageSaver.scPersistListener.prototype.onLocationChange = function() {}
 scPageSaver.scPersistListener.prototype.onStatusChange = function() {}
 scPageSaver.scPersistListener.prototype.onSecurityChange = function() {}
+//}
