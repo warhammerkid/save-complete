@@ -96,6 +96,9 @@ var scPageSaver = function(doc, file, dataFolder, options) {
     var me = this;
     this._fileSaver = new scPageSaver.scDefaultFileSaver(file, dataFolder, function(uri, success) { me._saveDone(uri, success); });
 
+    // Create file provider
+    this._fileProvider = new scPageSaver.scDefaultFileProvider(function(download) { me._downloadFinished(download); });
+
     // Extract data from options
     this._callback = options['callback'];
     delete options['callback'];
@@ -169,9 +172,8 @@ scPageSaver.prototype.run = function() {
  */
 scPageSaver.prototype.cancel = function(reason) {
     clearTimeout(this._processorTimeout);
-    for(var i = 0; i < this._downloads.length; i++) {
-        this._downloads[i].cancel();
-    }
+    this._fileProvider.cancel();
+
     // Report the reason
     switch (reason) {
         case 0:
@@ -185,6 +187,7 @@ scPageSaver.prototype.cancel = function(reason) {
             this._errors.push('Download canceled because of an error: '+reason);
             break;
     }
+
     // Notify the listeners and clean up
     this._finished();
 }
@@ -366,12 +369,11 @@ scPageSaver.prototype._downloadNextURI = function() {
             continue;
         }
 
-        var download = new scPageSaver.scDownload(currentURI);
+        var download = this._fileProvider.createDownload(currentURI);
         if(currentURI.type == 'index') download.charset = this._doc.characterSet; // Set character set from document
-        this._downloads.push(download);
         this._simultaneousDownloads++;
 
-        download.download(this._downloadFinished, this);
+        download.start();
     }
 };
 
@@ -379,12 +381,11 @@ scPageSaver.prototype._downloadNextURI = function() {
  * Download completion callback
  * @function _downloadFinished
  */
-scPageSaver.prototype._downloadFinished = function() {
+scPageSaver.prototype._downloadFinished = function(download) {
     this._simultaneousDownloads--;
+    this._downloads.push(download);
     if(this._listener) {
-        var progress = this._downloads.length - this._simultaneousDownloads;
-        var maxProgress = this._uris.length;
-        this._listener.onProgressChange64(null, null, progress, maxProgress, progress, maxProgress);
+        this._listener.onProgressChange64(null, null, this._downloads.length, this._uris.length, this._downloads.length, this._uris.length);
     }
 
     // Stop downloading if beyond end of uri list
@@ -580,6 +581,7 @@ scPageSaver.prototype._finished = function() {
 
     this._listener = null;
     this._fileSaver = null;
+    this._fileProvider = null;
     this._uris = null;
     this._downloads = null;
     this._callback = null;
@@ -779,6 +781,56 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
 
 
 /**
+ * Default file provider component.
+ * Is responsible for downloading URIs and determining content type and character
+ * set of the downloaded file, as well as converting the contents to unicode.
+ * @class scPageSaver.scDefaultFileProvider
+ {*/
+/**
+ * Creates a file provider object
+ * @constructor scPageSaver.scDefaultFileProvider
+ * @param {Function} downloadDoneCallback - The function to call when a download has completed. Called with the download object that was completed.
+ */
+scPageSaver.scDefaultFileProvider = function(downloadDoneCallback) {
+    this._downloads = [];
+    this._downloadDoneCallback = downloadDoneCallback;
+}
+
+/**
+ * Creates a download object for the given URI and returns it.
+ * @function {scPageSaver.scDownload} createDownload
+ * @param {scPageSaver.scURI} uri - The uri to download
+ */
+scPageSaver.scDefaultFileProvider.prototype.createDownload = function(uri) {
+    var download = new scPageSaver.scDownload(uri, this);
+    this._downloads.push(download);
+    return download;
+}
+
+/**
+ * Called by the scDownload when the download is completed, it calls the download
+ * done callback with the proper data.
+ * @function downloadDone
+ * @param {scPageSaver.scDownload} download - The download that was completed
+ */
+scPageSaver.scDefaultFileProvider.prototype.downloadDone = function(download) {
+    for(var i = 0; i < this._downloads.length; i++) this._downloads.splice(i--, 1);
+    this._downloadDoneCallback(download);
+}
+
+/**
+ * Cancels all active downloads
+ * @function cancel
+ */
+scPageSaver.scDefaultFileProvider.prototype.cancel = function() {
+    for(var i = 0; i < this._downloads.length; i++) {
+        this._downloads[i].stop();
+    }
+}
+//}
+
+
+/**
  * Simple URI data storage class
  * @class scPageSaver.scURI
  {*/
@@ -869,24 +921,21 @@ scPageSaver.scURI.compare = function(a,b) {
  * Creates a download object.
  * @constructor scPageSaver.scDownload
  * @param {scPageSaver.scURI} uri - The URI for the download
+ * @param {FileProvider} fileProvider - The creating file provider
  */
-scPageSaver.scDownload = function(uri) {
+scPageSaver.scDownload = function(uri, fileProvider) {
     this.contents = "";
     this.contentType = "";
     this.charset = "";
     this.uri = uri;
+    this._fileProvider = fileProvider;
 }
 
 /**
- * Starts the download. Calls the callback when the file is finished loading.
- * @function download
- * @param {Function} callback - The callback function
- * @param {optional Object} thisObj - The object to use as this when calling the callback
+ * Starts the download.
+ * @function start
  */
-scPageSaver.scDownload.prototype.download = function(callback, thisObj) {
-    if(typeof thisObj == 'undefined') thisObj = null;
-    this._callback = { func: callback, thisObj: thisObj };
-
+scPageSaver.scDownload.prototype.start = function() {
     // Create unichar stream loader and load channel (for getting from cache)
     var fileURI = this.uri.toString().replace(/#.*$/, "");
     try {
@@ -923,15 +972,15 @@ scPageSaver.scDownload.prototype.download = function(callback, thisObj) {
 
 /**
  * Cancels the download if it's active.
- * @function cancel
+ * @function stop
  */
-scPageSaver.scDownload.prototype.cancel = function() {
+scPageSaver.scDownload.prototype.stop = function() {
     if(this._channel) {
         this._channel.cancel(Components.results.NS_BINDING_ABORTED);
     }
     this._channel = null;
     this._loader = null;
-    this._callback = null;
+    this._fileProvider = null;
     this.failed = true;
     this.contents = null;
     this.contentType = null;
@@ -945,11 +994,11 @@ scPageSaver.scDownload.prototype.cancel = function() {
  */
 scPageSaver.scDownload.prototype._done = function(failed) {
     if(typeof failed == 'undefined') failed = false;
-    this._loader = null;
     this._channel = null;
+    this._loader = null;
+    this._fileProvider.downloadDone(this);
+    this._fileProvider = null;
     this.failed = failed;
-    this._callback.func.call(this._callback.thisObj);
-    this._callback = null;
 };
 
 
