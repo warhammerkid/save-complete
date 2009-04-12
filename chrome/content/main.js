@@ -120,7 +120,7 @@ var savecomplete = {
         var res = fp.show();
         if (res == nsIFilePicker.returnCancel) return;
 
-        var saver = new scPageSaver(focusedWindow.document, fp.file, savecomplete.getDirFromFile(fp.file), savecomplete.getSaverOptions());
+        var saver = savecomplete.getSaver(focusedWindow.document, fp.file);
         savecomplete.savers.push(saver);
         saver.run();
     },
@@ -150,7 +150,7 @@ var savecomplete = {
             if(fpParams.saveMode != 0 && fpParams.saveAsType == 0) {
                 // Save webpage complete selected so override and return false to stop internalSave
                 savecomplete.dump('Using savecomplete save instead of firefox save');
-                var saver = new scPageSaver(doc, fpParams.file, savecomplete.getDirFromFile(fpParams.file), savecomplete.getSaverOptions());
+                var saver = savecomplete.getSaver(doc, fpParams.file);
                 savecomplete.savers.push(saver);
                 saver.run();
                 return false;
@@ -174,20 +174,25 @@ var savecomplete = {
 
         savecomplete.dumpObj(messages);
     },
+    getSaver: function(doc, file) {
+        return new scPageSaver(
+            doc,
+            new scPageSaver.scDefaultFileSaver(file, savecomplete.getDirFromFile(file)),
+            new scPageSaver.scDefaultFileProvider(),
+            {
+                saveIframes: savecomplete.prefs.getBoolPref('save_iframes'),
+                saveObjects: savecomplete.prefs.getBoolPref('save_objects'),
+                rewriteLinks: savecomplete.prefs.getBoolPref('rewrite_links'),
+                callback: savecomplete.saverComplete
+            }
+        );
+    },
     getDirFromFile: function(file) {
         // Returns a reference to the save directory through the given file
         var folderName = file.leafName.replace(/\.\w*$/,"") + "_files";
         var dir = file.clone();
         dir.leafName = folderName;
         return dir;
-    },
-    getSaverOptions: function() {
-        return {
-            saveIframes: savecomplete.prefs.getBoolPref('save_iframes'),
-            saveObjects: savecomplete.prefs.getBoolPref('save_objects'),
-            rewriteLinks: savecomplete.prefs.getBoolPref('rewrite_links'),
-            callback: savecomplete.saverComplete
-        };
     },
     observe: function(subject, topic, data) {
         // Observer for pref changes

@@ -35,26 +35,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/*
-********** NOTES: ***********
-- File Saver component
-  - Path calculation
-  - File writing
-- File Provider component
-  - Provides downloading for a given file
-
-- Re-structure scPageSaver constructor
-  - scPageSaver(doc, fileSaver, fileProvider, options);
-- Create default fileProvider component
-  - Input: uri
-  - Output: contents (if real file), contentType, charset, uri object
-  - Provides createDownload(uri)
-    - Returns a download object
-    - Has a start method that takes a thisObj and callback function
-    - Has a stop method which should cancel the download
-*/
-
-
 /**
  * A page saver that saves the entire page after collecting all files it can from
  * the document and associated stylesheets.
@@ -65,8 +45,8 @@
  * saving process.
  * @constructor scPageSaver
  * @param {Document} doc - The document object for the page to be saved
- * @param {nsIFile} file - The ouput file for the HTML
- * @param {nsIFile} dataFolder - The output folder for all additional page data
+ * @param {FileSaver} fileSaver - The file saver object to use for saving
+ * @param {FileProvider} fileProvider - The file provider object to use for downloading
  * @param {optional Object} options - Any optional data that affects the save, from settings to callbacks
  * @... {Boolean} saveIframes - Pass in as true to have iframes processed - defaults to false
  * @... {Boolean} saveObjects - Pass in to have object, embed, and applet tags processed - defaults to false
@@ -75,7 +55,7 @@
  * @... {Object} progressListener - Progress listener that can QueryInterface to nsIWebProgressListener2.
  *                                  Pass false to prevent the progress from showing in the download manager.
  */
-var scPageSaver = function(doc, file, dataFolder, options) {
+var scPageSaver = function(doc, fileSaver, fileProvider, options) {
     if(!options) options = {};
 
     // Initialize data
@@ -92,12 +72,12 @@ var scPageSaver = function(doc, file, dataFolder, options) {
     this._uri = scPageSaver.nsIIOService.newURI(this._url, null, null);
     this._doc = doc;
 
-    // Create file saver
+    // Initialize file saver & file provider
     var me = this;
-    this._fileSaver = new scPageSaver.scDefaultFileSaver(file, dataFolder, function(uri, success) { me._saveDone(uri, success); });
-
-    // Create file provider
-    this._fileProvider = new scPageSaver.scDefaultFileProvider(function(download) { me._downloadFinished(download); });
+    this._fileSaver = fileSaver;
+    this._fileSaver.callback = function(uri, success) { me._saveDone(uri, success); };
+    this._fileProvider = fileProvider;
+    this._fileProvider.callback = function(download) { me._downloadFinished(download); };
 
     // Extract data from options
     this._callback = options['callback'];
@@ -109,9 +89,8 @@ var scPageSaver = function(doc, file, dataFolder, options) {
         }
         delete options['progressListener'];
     } else {
-        // DEPENDENT ON CERTAIN PARAMETERS
         this._listener = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);
-        this._listener.init(this._uri, scPageSaver.nsIIOService.newFileURI(file), "", null, null, null, this);
+        this._listener.init(this._uri, this._fileSaver.targetURI, "", null, null, null, this);
     }
 
     // Optional settings
@@ -635,16 +614,25 @@ scPageSaver.prototype._regexEscape = function(str) {
  * @class scPageSaver.scDefaultFileSaver
  {*/
 /**
+ * The function to call when a save has completed. Called with the uri of the
+ * saved file and the success of the save as a boolean.
+ * @property {Function} callback
+ */
+/**
+ * The target URI of the entire save. Used by nsITransfer to link to the download
+ * location and other things.
+ * @property {Function} targetURI
+ */
+/**
  * Creates a file saver object
  * @constructor scPageSaver.scDefaultFileSaver
  * @param {nsIFile} file - The ouput file for the HTML
  * @param {nsIFile} dataFolder - The output folder for all additional page data
- * @param {Function} saveDoneCallback - The function to call when a save has completed. Called with the uri of the saved file and the success of the save as a boolean.
  */
-scPageSaver.scDefaultFileSaver = function(file, dataFolder, saveDoneCallback) {
+scPageSaver.scDefaultFileSaver = function(file, dataFolder) {
     this._saveMap = {};
-    this._saveDoneCallback = saveDoneCallback;
 
+    // Initialize target file
     if(file.exists() == false) file.create(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0644);
     this._file = file;
 
@@ -654,6 +642,9 @@ scPageSaver.scDefaultFileSaver = function(file, dataFolder, saveDoneCallback) {
     if (dataFolder.exists()) dataFolder.remove(true);
     dataFolderBackup.append(folderName);
     this._dataFolder = dataFolderBackup;
+
+    // Define the target URI property for the listener
+    this.targetURI = scPageSaver.nsIIOService.newFileURI(file);
 }
 
 /**
@@ -739,7 +730,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIContents = function(uri, content
     foStream.close();
 
     // Notify page saver that the save is done and whether it succeeded or not
-    this._saveDoneCallback(uri, !failed);
+    this.callback(uri, !failed);
 }
 
 /**
@@ -759,7 +750,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURI = function(uri) {
     } catch(e) {
         this._currentURI = null;
         this._persist = null;
-        this._saveDoneCallback(uri, false);
+        this.callback(uri, false);
     }
 }
 
@@ -775,7 +766,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
     this._persist = null;
 
     // Notify saver that we're done
-    this._saveDoneCallback(uri, true);
+    this.callback(uri, true);
 }
 //}
 
@@ -787,13 +778,16 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
  * @class scPageSaver.scDefaultFileProvider
  {*/
 /**
+ * The function to call when a download has completed. Called with the download
+ * object that was completed.
+ * @property {Function} callback
+ */
+/**
  * Creates a file provider object
  * @constructor scPageSaver.scDefaultFileProvider
- * @param {Function} downloadDoneCallback - The function to call when a download has completed. Called with the download object that was completed.
  */
-scPageSaver.scDefaultFileProvider = function(downloadDoneCallback) {
+scPageSaver.scDefaultFileProvider = function() {
     this._downloads = [];
-    this._downloadDoneCallback = downloadDoneCallback;
 }
 
 /**
@@ -815,7 +809,7 @@ scPageSaver.scDefaultFileProvider.prototype.createDownload = function(uri) {
  */
 scPageSaver.scDefaultFileProvider.prototype.downloadDone = function(download) {
     for(var i = 0; i < this._downloads.length; i++) this._downloads.splice(i--, 1);
-    this._downloadDoneCallback(download);
+    this.callback(download);
 }
 
 /**
@@ -1050,6 +1044,7 @@ scPageSaver.scDownload.UnicharObserver.prototype.onStreamComplete = function (lo
 };
 //}
 //}
+
 
 /**
  * nsIWebBrowserPersist listener
