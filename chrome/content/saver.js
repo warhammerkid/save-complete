@@ -125,8 +125,6 @@ var scPageSaver = function(doc, file, dataFolder, options) {
     for(var prop in options) this._options[prop] = options[prop];
 }
 
-scPageSaver.SUCCESS = 'success';
-scPageSaver.FAILURE = 'failure';
 /* XPCOM Shortcuts */
 scPageSaver.nsIIOService = Components.classes["@mozilla.org/network/io-service;1"].getService(Components.interfaces.nsIIOService);
 scPageSaver.nsIRequest = Components.interfaces.nsIRequest;
@@ -580,8 +578,7 @@ scPageSaver.prototype._finished = function() {
     var nsResult = this._errors.length == 0 ? Components.results.NS_OK : Components.results.NS_ERROR_FAILURE;
 
     if(this._callback) {
-        var status = this._errors.length == 0 ? scPageSaver.SUCCESS : scPageSaver.FAILURE;
-        this._callback(this, status, {result: nsResult, warnings: this._warnings, errors: this._errors, timers: this._timers});
+        this._callback(this, nsResult, {warnings: this._warnings, errors: this._errors, timers: this._timers});
     }
 
     if(this._listener) this._listener.onStateChange(null, null, scPageSaver.webProgress.STATE_STOP | scPageSaver.webProgress.STATE_IS_NETWORK, nsResult);

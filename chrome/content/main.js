@@ -165,7 +165,7 @@ var savecomplete = {
         // Finally restore getTargetFile to what it was originally
         window['getTargetFile'] = originalGetTargetFile;
     },
-    saverComplete: function(saver, status, messages) {
+    saverComplete: function(saver, result, messages) {
         for(var i = 0; i < savecomplete.savers.length; i++) {
             if(savecomplete.savers[i] === saver) {
                 savecomplete.savers.splice(i, 1);
