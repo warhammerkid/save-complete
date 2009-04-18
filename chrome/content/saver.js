@@ -334,6 +334,30 @@ scPageSaver.prototype._extractURIsFromStyleSheet = function(styleSheet, importPa
 };
 
 /**
+ * Removes complete dupes and marks url dupes.
+ * @function _processDupes
+ */
+scPageSaver.prototype._processDupes = function() {
+    this._uris.sort(scPageSaver.scURI.compare);
+    var previous = this._uris[0];
+    for(var i = 1; i < this._uris.length; i++) {
+        if(!previous.uri || !previous.toString()) {
+            this._uris.splice(--i, 1);
+            previous = this._uris[i];
+            continue;
+        }
+
+        if(previous.isExactDupe(this._uris[i])) {
+            this._uris.splice(i--, 1);
+        } else if(previous.isDupe(this._uris[i])) {
+            this._uris[i].dupe = true;
+        } else {
+            previous = this._uris[i];
+        }
+    }
+};
+
+/**
  * Downloads the next URI in the stack. Once it's done, starts the processor.
  * @function _downloadNextURI
  */
@@ -359,10 +383,18 @@ scPageSaver.prototype._downloadNextURI = function() {
 /**
  * Download completion callback
  * @function _downloadFinished
+ * @param {scPageSaver.scDownload} download - The download that was completed
  */
 scPageSaver.prototype._downloadFinished = function(download) {
     this._simultaneousDownloads--;
     this._downloads.push(download);
+
+    if(download.failed && download.uri.type == 'index') {
+        this._errors.push('Failed to download main file');
+        this.cancel(0);
+        return;
+    }
+
     if(this._listener) {
         this._listener.onProgressChange64(null, null, this._downloads.length, this._uris.length, this._downloads.length, this._uris.length);
     }
@@ -395,17 +427,12 @@ scPageSaver.prototype._processNextURI = function() {
     var me = this;
     var download = this._downloads[this._currentDownloadIndex];
     var data = download.contents;
-    if(download.failed) {
-        if(download.uri.type == 'index') {
-            // TODO: Move to before downloader finishes so that we can cancel early
-            this._errors.push('Failed to download main file');
-            this.cancel(0);
-        } else {
-            this._warnings.push("Download failed for uri: "+download.uri);
-            this._currentDownloadIndex++;
-            this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
-        }
 
+    // Skip processing of failed downloads
+    if(download.failed) {
+        this._warnings.push("Download failed for uri: "+download.uri);
+        this._currentDownloadIndex++;
+        this._processorTimeout = setTimeout(function() { me._processNextURI();}, 2);
         return;
     }
 
@@ -466,6 +493,7 @@ scPageSaver.prototype._processNextURI = function() {
 
             // Fix anchors to point to absolute location instead of relative
             if(this._options['rewriteLinks']) {
+                // TODO: See if adding a negative lookahead for the https?: would improve performance
                 var replaceFunc = function() {
                     var match = /^([^:]+):/.exec(arguments[0]);
                     if(match && match[1] != 'http' && match[1] != 'https')
@@ -511,7 +539,7 @@ scPageSaver.prototype._processNextURI = function() {
         // Had problems with nsWebBrowserPersist and text files, so for now I'll do the saving
         this._fileSaver.saveURIContents(download.uri, data, download.charset);
     } else if(download.contentType != "") {
-        // Something we aren't processing so use nsWebBrowserPersist, because it always works
+        // Something we aren't processing so use the file saver's saveURI, because it always works
         this._fileSaver.saveURI(download.uri);
     } else {
         this._warnings.push('Missing contentType: '+download.uri);
@@ -568,30 +596,6 @@ scPageSaver.prototype._finished = function() {
     this._warnings = null;
     this._timers = null;
 }
-
-/**
- * Removes complete dupes and marks url dupes.
- * @function _processDupes
- */
-scPageSaver.prototype._processDupes = function() {
-    this._uris.sort(scPageSaver.scURI.compare);
-    var previous = this._uris[0];
-    for(var i = 1; i < this._uris.length; i++) {
-        if(!previous.uri || !previous.toString()) {
-            this._uris.splice(--i, 1);
-            previous = this._uris[i];
-            continue;
-        }
-
-        if(previous.isExactDupe(this._uris[i])) {
-            this._uris.splice(i--, 1);
-        } else if(previous.isDupe(this._uris[i])) {
-            this._uris[i].dupe = true;
-        } else {
-            previous = this._uris[i];
-        }
-    }
-};
 
 /**
  * Escapes a string for insertion into a regex.
