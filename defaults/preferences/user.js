@@ -5,3 +5,4 @@ pref("extensions.savecomplete@perlprogrammer.com.replace_builtin", false);
 pref("extensions.savecomplete@perlprogrammer.com.save_iframes", false);
 pref("extensions.savecomplete@perlprogrammer.com.save_objects", false);
 pref("extensions.savecomplete@perlprogrammer.com.rewrite_links", false);
+pref("extensions.savecomplete@perlprogrammer.com.debug", false);

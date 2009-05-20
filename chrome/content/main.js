@@ -36,7 +36,7 @@
 
 var savecompleteStrings = Components.classes["@mozilla.org/intl/stringbundle;1"].getService(Components.interfaces.nsIStringBundleService).createBundle("chrome://savecomplete/locale/save_complete.properties");
 var savecomplete = {
-    DEBUG_MODE: false,
+    debug: false,
     savers: [],
     /* Translateable Strings */
     savePage: savecompleteStrings.GetStringFromName("savecompleteSavePage"),
@@ -56,6 +56,9 @@ var savecomplete = {
         // Hook context menu to contextShow
         var contextMenu = document.getElementById('contentAreaContextMenu');
         contextMenu.addEventListener('popupshowing', savecomplete.contextShow, true);
+
+        // Set debug from prefs (updated when it changes, so we only need to initialize it)
+        savecomplete.debug = savecomplete.prefs.getBoolPref('debug');
 
         savecomplete.updateUIFromPrefs();
     },
@@ -204,25 +207,73 @@ var savecomplete = {
             case 'replace_builtin':
                 savecomplete.updateUIFromPrefs();
                 break;
+            case 'debug':
+                savecomplete.debug = savecomplete.prefs.getBoolPref('debug');
+                break;
         }
    },
     /* Console logging functions */
     dump: function(message) { // Debuging function -- prints to javascript console
-        if(!savecomplete.DEBUG_MODE) return;
+        if(!savecomplete.debug) return;
         var ConsoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
         ConsoleService.logStringMessage(message);
     },
-    dumpObj: function(obj) {
-        if(!savecomplete.DEBUG_MODE) return;
-        var str = "";
-        for(i in obj) {
-            try {
-                str += "obj["+i+"]: " + obj[i] + "\n";
-            } catch(e) {
-                str += "obj["+i+"]: Unavailable\n";
-            }
+    dumpObj: function(obj, level) {
+        if(!savecomplete.debug) return;
+        if(level == undefined) level = 0;
+        var returnStr = "";
+        var indent = "";
+        for(var l = 0; l < level; l++) {
+            indent += "\t";
         }
-        savecomplete.dump(str);
+
+        if(obj === null) {
+            returnStr = 'null';
+        } else if(obj === undefined) {
+            returnStr = 'undefined';
+        } else if(obj.constructor.name == 'String') {
+            returnStr = '"'+obj+'"';
+        } else if(typeof obj == 'number') {
+            returnStr = obj.toString();
+        } else if(typeof obj == 'boolean') {
+            returnStr = (obj)?'true':'false';
+        } else if(obj.constructor.name == 'Array') {
+            var arrayStr = "";
+            if(obj.length) {
+                arrayStr += "[\n";
+                for(var i = 0; i < obj.length; i++) {
+                    arrayStr += indent+"\t"+savecomplete.dumpObj(obj[i], level+1)+",\n";
+                }
+                arrayStr += indent + "]";
+            } else {
+                arrayStr += "[]";
+            }
+            returnStr = arrayStr;
+        } else if(obj.constructor.name == 'Object') {
+            var objStr = "{\n";
+            var foundProps = false;
+            for(var prop in obj) {
+                foundProps = true;
+                objStr += indent+"\t"+prop+": "+savecomplete.dumpObj(obj[prop], level+1)+",\n";
+            }
+            objStr += indent + "}";
+            if(!foundProps) {
+                objStr = "{}";
+            }
+            returnStr = objStr;
+        } else if(obj && obj.toString) {
+            returnStr = obj.toString();
+        } else if(obj && obj.constructor) {
+            returnStr = obj.constructor.toString();
+        } else {
+            returnStr = 'invalid';
+        }
+
+        if(level == 0) {
+            savecomplete.dump(returnStr);
+        } else {
+            return returnStr;
+        }
     }
 };
 window.addEventListener('load',savecomplete.onload, true);
