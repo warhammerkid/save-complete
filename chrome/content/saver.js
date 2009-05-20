@@ -662,7 +662,7 @@ scPageSaver.prototype._savePath = function(uri, includeFolder) {
         actualFileOnDisk.append(fileName);
 
         // Since the file is not actually saved until later, we must create a placeholder
-        actualFileOnDisk.createUnique(Components.interfaces.nsIFile.FILE_TYPE, 0644);
+        actualFileOnDisk.createUnique(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0644);
 
         // Find out which unique name has been used
         fileName = actualFileOnDisk.leafName;
