@@ -684,7 +684,7 @@ scPageSaver.scDefaultFileSaver.prototype.documentPath = function(uri, relativeUR
         actualFileOnDisk.append(fileName);
 
         // Since the file is not actually saved until later, we must create a placeholder
-        actualFileOnDisk.createUnique(Components.interfaces.nsIFile.FILE_TYPE, 0644);
+        actualFileOnDisk.createUnique(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0644);
 
         // Find out which unique name has been used
         fileName = actualFileOnDisk.leafName;
@@ -714,6 +714,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIContents = function(uri, content
         file = this._file;
     } else {
         var file = this._dataFolder.clone();
+        if(typeof this._saveMap[uri.toString()] == 'undefined') this.documentPath(uri, {type:null}); // Force saveMap to be populated
         file.append(this._saveMap[uri.toString()]);
     }
 
@@ -745,9 +746,11 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIContents = function(uri, content
  */
 scPageSaver.scDefaultFileSaver.prototype.saveURI = function(uri) {
     this._currentURI = uri;
-    this._persist = Components.classes["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Components.interfaces.nsIWebBrowserPersist);
     var file = this._dataFolder.clone();
+    if(typeof this._saveMap[uri.toString()] == 'undefined') this.documentPath(uri, {type:null}); // Force saveMap to be populated
     file.append(this._saveMap[uri.toString()]);
+
+    this._persist = Components.classes["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Components.interfaces.nsIWebBrowserPersist);
     this._persist.progressListener = new scPageSaver.scPersistListener(this);
     try {
         this._persist.saveURI(uri.uri, null , null , null , null , file);
