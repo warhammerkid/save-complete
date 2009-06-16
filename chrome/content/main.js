@@ -87,15 +87,16 @@ var savecomplete = {
     save: function() { // Called by selecting from either the context menu or the file menu
         // Get page that is supposed to be saved
         var focusedWindow = document.commandDispatcher.focusedWindow;
-        if (focusedWindow == window)
-            focusedWindow = _content;
-
+        if (focusedWindow == window) focusedWindow = _content;
+        saveDocument(doc);
+    },
+    saveDocument: function(doc) { // Call directly if focusedWindow code doesn't work (like for Custom Buttons)
         // First check if it's html and if it's from an accepted protocol
-        if(focusedWindow.document.contentType != "text/html" && focusedWindow.document.contentType != "application/xhtml+xml") {
+        if(doc.contentType != "text/html" && doc.contentType != "application/xhtml+xml") {
             alert(savecomplete.illegalContentType);
             return;
-        } else if(focusedWindow.document.location.href.match(/^(ftp|file|chrome|view-source|about|javascript|news|snews|ldap|ldaps|mailto|finger|telnet|gopher|irc|mailbox)/)) {
-            alert(savecomplete.illegalProtocol+" "+focusedWindow.document.location.href.split("://").shift()+"://");
+        } else if(doc.location.href.match(/^(ftp|file|chrome|view-source|about|javascript|news|snews|ldap|ldaps|mailto|finger|telnet|gopher|irc|mailbox)/)) {
+            alert(savecomplete.illegalProtocol+" "+doc.location.href.split("://").shift()+"://");
             return;
         }
 
@@ -108,9 +109,9 @@ var savecomplete = {
         // Get default save string=
         // The default save string is either the url after the '/' or it is the title of the document
         // I've tried to be as close to the default behavior in Firefox as possible
-        var defaultSaveString = focusedWindow.document.location.href.split("?").shift();
+        var defaultSaveString = doc.location.href.split("?").shift();
         if(defaultSaveString.split("/").pop() == "") // Nothing after '/' so use the title
-            defaultSaveString = focusedWindow.document.title+".html";
+            defaultSaveString = doc.title+".html";
         else {
             defaultSaveString = defaultSaveString.split("/").pop();
             if(defaultSaveString.match(/\.x?html?$/) == null) defaultSaveString += ".html";
@@ -120,9 +121,7 @@ var savecomplete = {
         var res = fp.show();
         if (res == nsIFilePicker.returnCancel) return;
 
-        var saver = new scPageSaver(focusedWindow.document, fp.file, savecomplete.getDirFromFile(fp.file), savecomplete.getSaverOptions());
-        savecomplete.savers.push(saver);
-        saver.run();
+        savecomplete.internalSave(doc, fp.file);
     },
     overrideSave: function() { // Called by overridden internal Firefox save
         /* overrideSave overrides functions defined in contentAreaUtils.js to
@@ -150,9 +149,7 @@ var savecomplete = {
             if(fpParams.saveMode != 0 && fpParams.saveAsType == 0) {
                 // Save webpage complete selected so override and return false to stop internalSave
                 savecomplete.dump('Using savecomplete save instead of firefox save');
-                var saver = new scPageSaver(doc, fpParams.file, savecomplete.getDirFromFile(fpParams.file), savecomplete.getSaverOptions());
-                savecomplete.savers.push(saver);
-                saver.run();
+                savecomplete.internalSave(doc, fpParams.file);
                 return false;
             }
 
@@ -164,6 +161,11 @@ var savecomplete = {
 
         // Finally restore getTargetFile to what it was originally
         window['getTargetFile'] = originalGetTargetFile;
+    },
+    internalSave: function(doc, fileObject) {
+        var saver = new scPageSaver(doc, fileObject, savecomplete.getDirFromFile(fileObject), savecomplete.getSaverOptions());
+        savecomplete.savers.push(saver);
+        saver.run();
     },
     saverComplete: function(saver, status, messages) {
         for(var i = 0; i < savecomplete.savers.length; i++) {
