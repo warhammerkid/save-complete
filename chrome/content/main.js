@@ -91,7 +91,7 @@ var savecomplete = {
         // Get page that is supposed to be saved
         var focusedWindow = document.commandDispatcher.focusedWindow;
         if (focusedWindow == window) focusedWindow = _content;
-        saveDocument(doc);
+        savecomplete.saveDocument(focusedWindow.document);
     },
     saveDocument: function(doc) { // Call directly if focusedWindow code doesn't work (like for Custom Buttons)
         // First check if it's html and if it's from an accepted protocol
