@@ -1,0 +1,7 @@
+jGrouseHome.default=/usr/local/lib/jGrouseDoc/
+inputDir.default=chrome/content
+fileMask.default=**/*.js
+outputDir.default=docs
+projectName=Save Complete
+privatePrefix=_
+suppressPrivates=true

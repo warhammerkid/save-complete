@@ -39,7 +39,7 @@
  * A page saver that saves the entire page after collecting all files it can from
  * the document and associated stylesheets.
  * @class scPageSaver
- {*/
+ *///{
 /**
  * Creates a page saver object and initalizes. Call {@link run} to start the
  * saving process.
@@ -616,7 +616,7 @@ scPageSaver.prototype._regexEscape = function(str) {
  * Saving is sequential, so it's not necessary to structure code to handle parallel
  * saves.
  * @class scPageSaver.scDefaultFileSaver
- {*/
+ *///{
 /**
  * The function to call when a save has completed. Called with the uri of the
  * saved file and the success of the save as a boolean.
@@ -629,7 +629,7 @@ scPageSaver.prototype._regexEscape = function(str) {
  */
 /**
  * Creates a file saver object
- * @constructor scPageSaver.scDefaultFileSaver
+ * @constructor scDefaultFileSaver
  * @param {nsIFile} file - The ouput file for the HTML
  * @param {nsIFile} dataFolder - The output folder for all additional page data
  */
@@ -783,7 +783,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
  * Is responsible for downloading URIs and determining content type and character
  * set of the downloaded file, as well as converting the contents to unicode.
  * @class scPageSaver.scDefaultFileProvider
- {*/
+ *///{
 /**
  * The function to call when a download has completed. Called with the download
  * object that was completed.
@@ -791,7 +791,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
  */
 /**
  * Creates a file provider object
- * @constructor scPageSaver.scDefaultFileProvider
+ * @constructor scDefaultFileProvider
  */
 scPageSaver.scDefaultFileProvider = function() {
     this._downloads = [];
@@ -834,10 +834,10 @@ scPageSaver.scDefaultFileProvider.prototype.cancel = function() {
 /**
  * Simple URI data storage class
  * @class scPageSaver.scURI
- {*/
+ *///{
 /**
  * Creates a URI object.
- * @constructor scPageSaver.scURI
+ * @constructor scURI
  * @param {String} extractedURI - The URI extracted from the document
  * @param {String or nsIURI} base - The base URI - used to resolve extracted URI against
  * @param {String} type - The type of place where the URL was extracted from, like an attribute, import rule, style rule, etc.
@@ -917,10 +917,10 @@ scPageSaver.scURI.compare = function(a,b) {
 /**
  * Download data storage class
  * @class scPageSaver.scDownload
- {*/
+ *///{
 /**
  * Creates a download object.
- * @constructor scPageSaver.scDownload
+ * @constructor scDownload
  * @param {scPageSaver.scURI} uri - The URI for the download
  * @param {FileProvider} fileProvider - The creating file provider
  */
@@ -1006,7 +1006,7 @@ scPageSaver.scDownload.prototype._done = function(failed) {
 /**
  * Download Observer which converts contents to unicode.
  * @class scPageSaver.scDownload.UnicharObserver
- {*/
+ *///{
 scPageSaver.scDownload.UnicharObserver = function (download) {
     this._download = download;
     this._charset = null;
@@ -1056,7 +1056,7 @@ scPageSaver.scDownload.UnicharObserver.prototype.onStreamComplete = function (lo
 /**
  * nsIWebBrowserPersist listener
  * @class scPageSaver.scPersistListener
- {*/
+ *///{
 scPageSaver.scPersistListener = function(fileSaver) {
     this._fileSaver = fileSaver;
 }
