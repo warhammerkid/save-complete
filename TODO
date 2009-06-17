@@ -1,5 +1,0 @@
-TODO:
-- Re-structure API so that it's easy for people to override the save path,
-  writing systems, and data providers to support extensions like UnMHT or live
-  dom page save extensions
-
