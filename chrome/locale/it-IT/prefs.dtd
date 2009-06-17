@@ -1,0 +1,23 @@
+<!-- Translations for the preference panel -->
+
+<!-- Preference Window Title -->
+<!ENTITY window.title "Impostazioni di Save Complete">
+
+<!-- Preference Tab Labels -->
+<!ENTITY pane.main.label "Generali">
+<!ENTITY pane.advanced.label "Avanzate">
+
+<!-- Preference Labels and Accesskeys -->
+<!-- Enable a menu item in the context menu to "Save Complete..." the page -->
+<!ENTITY pref.context.label "Mostra &apos;Salva pagina completa con nome…&apos; nel menu contestale">
+<!ENTITY pref.context.accesskey "c">
+<!-- Substitute Save Complete extension saving system for built-in Firefox saver -->
+<!ENTITY pref.builtin.label "Sostituisci l&apos;opzione per il salvataggio delle pagine web di Firefox">
+<!ENTITY pref.builtin.accesskey "w">
+<!ENTITY pref.iframe.label "Salva gli iframe">
+<!ENTITY pref.iframe.accesskey "S">
+<!ENTITY pref.objects.label "Salva gli oggetti incorporati, come Flash o audio">
+<!ENTITY pref.objects.accesskey "o">
+<!-- When a page is saved, the links won't point to the absolute location, so this option enables re-writing to absolute URLs -->
+<!ENTITY pref.links.label "Fai puntare i link in maniera corretta al relativo contenuto [sperimentale]">
+<!ENTITY pref.links.accesskey "m">

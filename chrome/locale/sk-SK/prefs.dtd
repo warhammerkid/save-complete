@@ -1,17 +1,23 @@
-<!--  -->
-<!--  -->
+<!-- Translations for the preference panel -->
+
+<!-- Preference Window Title -->
 <!ENTITY window.title "Možnosti">
-<!--  -->
+
+<!-- Preference Tab Labels -->
 <!ENTITY pane.main.label "Hlavné">
 <!ENTITY pane.advanced.label "Rozšírené">
-<!--  -->
+
+<!-- Preference Labels and Accesskeys -->
+<!-- Enable a menu item in the context menu to "Save Complete..." the page -->
 <!ENTITY pref.context.label "Zobraziť možnosti rozšírenia v kontextovej ponuke">
 <!ENTITY pref.context.accesskey "Z">
+<!-- Substitute Save Complete extension saving system for built-in Firefox saver -->
 <!ENTITY pref.builtin.label "Nahradí vo Firefoxe zabudovaný príkaz na uloženie kompletnej webovej stránky">
 <!ENTITY pref.builtin.accesskey "N">
 <!ENTITY pref.iframe.label "Uložiť prvky iframe">
 <!ENTITY pref.iframe.accesskey "U">
 <!ENTITY pref.objects.label "Uložiť vložené objekty ako flash video alebo hudba">
 <!ENTITY pref.objects.accesskey "v">
+<!-- When a page is saved, the links won't point to the absolute location, so this option enables re-writing to absolute URLs -->
 <!ENTITY pref.links.label "Upraviť odkazy tak, aby neodkazovali na nesprávne miesto [experimentálne]">
 <!ENTITY pref.links.accesskey "o">
