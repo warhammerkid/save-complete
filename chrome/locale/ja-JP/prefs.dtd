@@ -1,23 +1,23 @@
 <!-- Translations for the preference panel -->
 
 <!-- Preference Window Title -->
-<!ENTITY window.title "Opciones">
+<!ENTITY window.title "設定">
 
 <!-- Preference Tab Labels -->
-<!ENTITY pane.main.label "General">
-<!ENTITY pane.advanced.label "Avanzadas">
+<!ENTITY pane.main.label "全般">
+<!ENTITY pane.advanced.label "詳細">
 
 <!-- Preference Labels and Accesskeys -->
 <!-- Enable a menu item in the context menu to "Save Complete..." the page -->
-<!ENTITY pref.context.label "Mostrar la opción guardar completa en el menú contextual">
+<!ENTITY pref.context.label "コンテキストメニューに Save Complete オプションを表示する">
 <!ENTITY pref.context.accesskey "c">
 <!-- Substitute Save Complete extension saving system for built-in Firefox saver -->
-<!ENTITY pref.builtin.label "Reemplazar la función incorporada de Firefox de guardar la página completa">
+<!ENTITY pref.builtin.label "Firefox 組み込みの完全ウェブページ保存コマンドを置き換える">
 <!ENTITY pref.builtin.accesskey "r">
-<!ENTITY pref.iframe.label "Guardar iframes">
+<!ENTITY pref.iframe.label "iframe を保存する">
 <!ENTITY pref.iframe.accesskey "i">
-<!ENTITY pref.objects.label "Guardar los objetos incluidos, como flash o audio">
+<!ENTITY pref.objects.label "Flash や音声のような埋め込みオブジェクトを保存する">
 <!ENTITY pref.objects.accesskey "o">
 <!-- When a page is saved, the links won't point to the absolute location, so this option enables re-writing to absolute URLs -->
-<!ENTITY pref.links.label "Ajustar los enlaces para que no apunten a un sitio incorrecto [Experimental]">
+<!ENTITY pref.links.label "間違った場所を指さないようにリンクを訂正する [実験的]">
 <!ENTITY pref.links.accesskey "l">

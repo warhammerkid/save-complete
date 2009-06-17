@@ -1,17 +1,23 @@
-<!--  -->
-<!--  -->
+<!-- Translations for the preference panel -->
+
+<!-- Preference Window Title -->
 <!ENTITY window.title "Настройки">
-<!--  -->
+
+<!-- Preference Tab Labels -->
 <!ENTITY pane.main.label "Основные">
 <!ENTITY pane.advanced.label "Дополнительные">
-<!--  -->
+
+<!-- Preference Labels and Accesskeys -->
+<!-- Enable a menu item in the context menu to "Save Complete..." the page -->
 <!ENTITY pref.context.label "Показывать в контекстном меню">
 <!ENTITY pref.context.accesskey "а">
+<!-- Substitute Save Complete extension saving system for built-in Firefox saver -->
 <!ENTITY pref.builtin.label "Использовать взамен стандартного сохранения">
 <!ENTITY pref.builtin.accesskey "с">
 <!ENTITY pref.iframe.label "Сохранять фреймы">
 <!ENTITY pref.iframe.accesskey "я">
 <!ENTITY pref.objects.label "Сохранять внедрённые объекты (флеш, аудио)">
 <!ENTITY pref.objects.accesskey "н">
+<!-- When a page is saved, the links won't point to the absolute location, so this option enables re-writing to absolute URLs -->
 <!ENTITY pref.links.label "Исправлять ссылки (Экспериментально)">
 <!ENTITY pref.links.accesskey "п">

@@ -1,7 +1,7 @@
 <!-- File and context menu translations -->
-<!ENTITY menuitem.save.label "名前を付けて完全なページを保存...">
-<!ENTITY menuitem.save.accesskey.filemenu "">
-<!ENTITY menuitem.save.accesskey.contextmenu "C">
+<!ENTITY menuitem.save.label "Teljes oldal mentése másként...">
+<!ENTITY menuitem.save.accesskey.filemenu "s">
+<!ENTITY menuitem.save.accesskey.contextmenu "s">
 
 <!-- Save Complete save command keyboard shortcut -->
 <!-- accel means either the control key or the command key on a mac -->

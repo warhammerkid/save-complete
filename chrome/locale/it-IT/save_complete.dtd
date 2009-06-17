@@ -1,1 +1,9 @@
-<!ENTITY save_complete.menuitem.save "Salva pagina completa con nome...">
+<!-- File and context menu translations -->
+<!ENTITY menuitem.save.label "Salva pagina completa con nome…">
+<!ENTITY menuitem.save.accesskey.filemenu "">
+<!ENTITY menuitem.save.accesskey.contextmenu "c">
+
+<!-- Save Complete save command keyboard shortcut -->
+<!-- accel means either the control key or the command key on a mac -->
+<!ENTITY command.save.key "S">
+<!ENTITY command.save.modifiers "accel shift">
