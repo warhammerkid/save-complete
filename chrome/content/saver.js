@@ -37,7 +37,24 @@
 
 /**
  * A page saver that saves the entire page after collecting all files it can from
- * the document and associated stylesheets.
+ * the document and associated stylesheets.<br>
+ * <br>
+ * A simple page save can be accomplished by creating an <code>nsIFile</code> object
+ * for the HTML for the page and running the following code:<br>
+ * <pre>
+ * var saver = new scPageSaver(
+ *     PAGE_DOC_OBJECT,
+ *     new scPageSaver.scDefaultFileSaver(FILE_OBJECT),
+ *     new scPageSaver.scDefaultFileProvider(),
+ *     { callback: OPTIONAL_CALLBACK_FUNCTION }
+ * );
+ * saver.run();
+ * </pre>
+ *
+ * If you're interested in overriding the default behaviors, the FileSaver and
+ * FileProvider interfaces are well documented and the default implementations
+ * ({@link scPageSaver.scDefaultFileSaver} &amp; {@link scPageSaver.scDefaultFileProvider})
+ * provide a great starting point for development of your own.<br>
  * @class scPageSaver
  *///{
 /**
