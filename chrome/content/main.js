@@ -168,7 +168,7 @@ var savecomplete = {
     internalSave: function(doc, fileObject) {
         var saver = new scPageSaver(
             doc,
-            new scPageSaver.scDefaultFileSaver(fileObject, savecomplete.getDirFromFile(fileObject)),
+            new scPageSaver.scDefaultFileSaver(fileObject),
             new scPageSaver.scDefaultFileProvider(),
             {
                 saveIframes: savecomplete.prefs.getBoolPref('save_iframes'),
@@ -188,13 +188,6 @@ var savecomplete = {
         }
 
         savecomplete.dumpObj(messages);
-    },
-    getDirFromFile: function(file) {
-        // Returns a reference to the save directory through the given file
-        var folderName = file.leafName.replace(/\.\w*$/,"") + "_files";
-        var dir = file.clone();
-        dir.leafName = folderName;
-        return dir;
     },
     observe: function(subject, topic, data) {
         // Observer for pref changes

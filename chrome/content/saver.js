@@ -631,21 +631,21 @@ scPageSaver.prototype._regexEscape = function(str) {
  * Creates a file saver object
  * @constructor scDefaultFileSaver
  * @param {nsIFile} file - The ouput file for the HTML
- * @param {nsIFile} dataFolder - The output folder for all additional page data
  */
-scPageSaver.scDefaultFileSaver = function(file, dataFolder) {
+scPageSaver.scDefaultFileSaver = function(file) {
     this._saveMap = {};
 
     // Initialize target file
     if(file.exists() == false) file.create(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0644);
     this._file = file;
 
-    // Delete and re-create dataFolder so that it is clean
-    var dataFolderBackup = dataFolder.parent;
-    var folderName = dataFolder.leafName;
-    if (dataFolder.exists()) dataFolder.remove(true);
-    dataFolderBackup.append(folderName);
-    this._dataFolder = dataFolderBackup;
+    // Initialize data folder (Delete and re-created so that it's clean)
+    var folderName = file.leafName.replace(/\.\w*$/,"") + "_files";
+    var dataFolderExisting = file.clone();
+    dataFolderExisting.leafName = folderName;
+    if(dataFolderExisting.exists()) dataFolderExisting.remove(true);
+    this._dataFolder = file.clone();
+    this._dataFolder.leafName = folderName;
 
     // Define the target URI property for the listener
     this.targetURI = scPageSaver.nsIIOService.newFileURI(file);
