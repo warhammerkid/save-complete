@@ -36,7 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 /**
- * A page saver that saves the entire page after collecting all files it can from
+ * Manages the saving of the entire page after collecting all files it can from
  * the document and associated stylesheets.<br>
  * <br>
  * A simple page save can be accomplished by creating an <code>nsIFile</code> object
@@ -67,7 +67,7 @@
  * @param {optional Object} options - Any optional data that affects the save, from settings to callbacks
  * @... {Boolean} saveIframes - Pass in as true to have iframes processed - defaults to false
  * @... {Boolean} saveObjects - Pass in to have object, embed, and applet tags processed - defaults to false
- * @... {Boolean} rewriteLinks - Pass in to have links rewritten to be absolute before saving
+ * @... {Boolean} rewriteLinks - Pass in to have links rewritten to be absolute before saving - defaults to false
  * @... {Function} callback - The optional callback on save completion
  * @... {Object} progressListener - Progress listener that can QueryInterface to nsIWebProgressListener2.
  *                                  Pass false to prevent the progress from showing in the download manager.
@@ -92,22 +92,24 @@ var scPageSaver = function(doc, fileSaver, fileProvider, options) {
     // Initialize file saver & file provider
     var me = this;
     this._fileSaver = fileSaver;
-    this._fileSaver.callback = function(uri, success) { me._saveDone(uri, success); };
+    this._fileSaver.initialize(function(uri, success) { me._saveDone(uri, success); });
     this._fileProvider = fileProvider;
-    this._fileProvider.callback = function(download) { me._downloadFinished(download); };
+    this._fileProvider.initialize(this._doc, function(download) { me._downloadFinished(download); });
 
     // Extract data from options
     this._callback = options['callback'];
     delete options['callback'];
 
     if(options.hasOwnProperty('progressListener')) {
+        // Use the passed in listener
         if(options['progressListener'] !== false) {
             this._listener = options['progressListener'].QueryInterface(Components.interfaces.nsIWebProgressListener2);
         }
         delete options['progressListener'];
     } else {
+        // Create a standard transfer object as the listener
         this._listener = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);
-        this._listener.init(this._uri, this._fileSaver.targetURI, "", null, null, null, this);
+        this._listener.init(this._uri, this._fileSaver.getTargetURI(), "", null, null, null, this);
     }
 
     // Optional settings
@@ -635,16 +637,6 @@ scPageSaver.prototype._regexEscape = function(str) {
  * @class scPageSaver.scDefaultFileSaver
  *///{
 /**
- * The function to call when a save has completed. Called with the uri of the
- * saved file and the success of the save as a boolean.
- * @property {Function} callback
- */
-/**
- * The target URI of the entire save. Used by nsITransfer to link to the download
- * location and other things.
- * @property {Function} targetURI
- */
-/**
  * Creates a file saver object
  * @constructor scDefaultFileSaver
  * @param {nsIFile} file - The ouput file for the HTML
@@ -663,9 +655,31 @@ scPageSaver.scDefaultFileSaver = function(file) {
     if(dataFolderExisting.exists()) dataFolderExisting.remove(true);
     this._dataFolder = file.clone();
     this._dataFolder.leafName = folderName;
+}
 
-    // Define the target URI property for the listener
-    this.targetURI = scPageSaver.nsIIOService.newFileURI(file);
+/**
+ * Returns the target URI of the entire save. Used by nsITransfer to link to the
+ * download location.
+ * @function {String} getTargetURI
+ * @return The target URI - in this case the URI for the save file
+ */
+scPageSaver.scDefaultFileSaver.prototype.getTargetURI = function() {
+    if(!this._targetURI) {
+        this._targetURI = scPageSaver.nsIIOService.newFileURI(this._file);
+    }
+    return this._targetURI;
+}
+
+/**
+ * Called by the page saver object, initializes the file saver with the needed
+ * data from the page saver
+ * @function initialize
+ * @param {Function} callback - The function to call when a save has completed.
+ *                   Called with the uri of the saved file and the success of the
+ *                   save as a boolean.
+ */
+scPageSaver.scDefaultFileSaver.prototype.initialize = function(callback) {
+    this._saveCallback = callback;
 }
 
 /**
@@ -752,7 +766,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIContents = function(uri, content
     foStream.close();
 
     // Notify page saver that the save is done and whether it succeeded or not
-    this.callback(uri, !failed);
+    this._saveCallback(uri, !failed);
 }
 
 /**
@@ -774,7 +788,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURI = function(uri) {
     } catch(e) {
         this._currentURI = null;
         this._persist = null;
-        this.callback(uri, false);
+        this._saveCallback(uri, false);
     }
 }
 
@@ -790,7 +804,7 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
     this._persist = null;
 
     // Notify saver that we're done
-    this.callback(uri, true);
+    this._saveCallback(uri, true);
 }
 //}
 
@@ -802,16 +816,24 @@ scPageSaver.scDefaultFileSaver.prototype.saveURIDone = function() {
  * @class scPageSaver.scDefaultFileProvider
  *///{
 /**
- * The function to call when a download has completed. Called with the download
- * object that was completed.
- * @property {Function} callback
- */
-/**
  * Creates a file provider object
  * @constructor scDefaultFileProvider
  */
 scPageSaver.scDefaultFileProvider = function() {
     this._downloads = [];
+}
+
+/**
+ * Called by the page saver object, initializes the file saver with the needed
+ * data from the page saver
+ * @function initialize
+ * @param {Document} doc - The document object for the saved page
+ * @param {Function} callback - The function to call when a download has completed.
+ *                   Called with the download object that was completed.
+ */
+scPageSaver.scDefaultFileProvider.prototype.initialize = function(doc, callback) {
+    this._doc = doc;
+    this._downloadCallback = callback;
 }
 
 /**
@@ -832,8 +854,13 @@ scPageSaver.scDefaultFileProvider.prototype.createDownload = function(uri) {
  * @param {scPageSaver.scDownload} download - The download that was completed
  */
 scPageSaver.scDefaultFileProvider.prototype.downloadDone = function(download) {
-    for(var i = 0; i < this._downloads.length; i++) this._downloads.splice(i--, 1);
-    this.callback(download);
+    for(var i = 0; i < this._downloads.length; i++) {
+        if(this._downloads[i] === download) {
+            this._downloads.splice(i, 1);
+            break;
+        }
+    }
+    this._downloadCallback(download);
 }
 
 /**
@@ -844,6 +871,7 @@ scPageSaver.scDefaultFileProvider.prototype.cancel = function() {
     for(var i = 0; i < this._downloads.length; i++) {
         this._downloads[i].stop();
     }
+    this._downloads = [];
 }
 //}
 
@@ -875,6 +903,19 @@ scPageSaver.scURI = function(extractedURI, base, type, where) {
     this.type = type;
     this.where = where;
     this.dupe = false;
+};
+
+/**
+ * Comparison function passed to the sort method for scURI objects
+ * @function {static int} compare
+ * @param {scPageSaver.scURI} a - The first object
+ * @param {scPageSaver.scURI} b - The second object
+ * @return Ordering int for sort
+ */
+scPageSaver.scURI.compare = function(a,b) {
+    if (a.toString() < b.toString()) return -1;
+    if (a.toString() > b.toString()) return 1;
+    return 0;
 };
 
 /**
@@ -914,19 +955,6 @@ scPageSaver.scURI.prototype.toString = function() {
         }
     }
     return this._string;
-};
-
-/**
- * Comparison function passed to the sort method for scURI objects
- * @function {static int} compare
- * @param {scPageSaver.scURI} a - The first object
- * @param {scPageSaver.scURI} b - The second object
- * @return Ordering int for sort
- */
-scPageSaver.scURI.compare = function(a,b) {
-    if (a.toString() < b.toString()) return -1;
-    if (a.toString() > b.toString()) return 1;
-    return 0;
 };
 //}
 
