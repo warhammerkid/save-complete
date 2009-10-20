@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <title>Test Document</title>
+    <style>
+      @import"test1.css";
+      @import url("test7.css") screen;
+      #test2 { background: url("green.png") !important; }
+      #test4 { background: red; }
+    </style>
+    <link href="test3.css" media="screen" rel="stylesheet" type="text/css" />
+    <style>
+      @import url(test8.css);
+      #test6 { background: url('green.png') !important; }
+    </style>
+    <script type="text/javacript">
+      var a = '<a href="invalid.href">Invalid HTML, but it could still be used</a>';
+    </script>
+    <!--[if IE 7]>
+      <link href="ie.css" media="screen" rel="stylesheet" type="text/css" />
+      <link href="ie2.css" media="screen" rel="stylesheet" type="text/css" />
+      <script type="text/javascript">var a = "ie.js";</script>
+      <script type="text/javascript" src="ie.js"></script>
+    <![endif]-->
+    <script type="text/javascript" src="http://www.asdfsdfasdf.com/nonexistent.js"></script><!-- Should not crash the download -->
+  </head>
+  <body>
+    <p style="background: url('green.png'); background: url(accept.png);">Test paragraph with fake css url('green.png') in it to see if I can break stuff - should have 'green.png' in it and nothing else</p>
+    <p id="test1">This should be green</p>
+    <p id="test2">This should be green</p>
+    <p id="test3">This should be green</p>
+    <p id="test4" style="background: url('green.png') !important;" testattr="testattr">This should be green</p>
+    <p id="test5">This should be green</p>
+    <div id="test6" style="background:red; width:30px; height:30px;"></div>
+    <p id="test7">This should be green</p>
+    <p id="test8">This should be green</p>
+    <form>
+      <input id="test9" type="image" src="accept.png" value="Fail" />
+    </form>
+    <p><img src="accept.png" alt="Fail" /></p>
+    <iframe src="iframe.html" style="width:300px;height:100px;"></iframe>
+    <p>
+      <a href="../test.html">Test Link</a><br />
+      <a href="http://www.google.com/">Google Link</a><br />
+      <a href="javascript:alert('test');">Javascript Link</a><br />
+    </p>
+  </body>
+</html>

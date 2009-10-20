@@ -1,0 +1,7 @@
+#test5 {
+    background: red;
+}
+
+p#test5 {
+    background: url("../green.png") !important;
+}
