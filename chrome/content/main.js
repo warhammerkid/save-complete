@@ -34,48 +34,51 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var savecompleteStrings = Components.classes["@mozilla.org/intl/stringbundle;1"].getService(Components.interfaces.nsIStringBundleService).createBundle("chrome://savecomplete/locale/save_complete.properties");
-var savecomplete = {
+function scTrans(key) {
+    if(!scTrans.strings) {
+        scTrans.strings = Components.classes["@mozilla.org/intl/stringbundle;1"].getService(Components.interfaces.nsIStringBundleService).createBundle("chrome://savecomplete/locale/save_complete.properties");
+        scTrans.cache = {};
+    }
+    if(!scTrans.cache[key]) scTrans.cache[key] = scTrans.strings.GetStringFromName(key);
+    return scTrans.cache[key];
+}
+
+var scMain = {
     debug: false,
     savers: [],
-    /* Translateable Strings */
-    savePage: savecompleteStrings.GetStringFromName("savecompleteSavePage"),
-    saveFilter: savecompleteStrings.GetStringFromName("savecompleteSaveFilter"),
-    illegalProtocol: savecompleteStrings.GetStringFromName("savecompleteIllegalProtocol"),
-    illegalContentType: savecompleteStrings.GetStringFromName("savecompleteIllegalContentType"),
     /* Main functions */
     onload: function() { // Called when Firefox runs
         // Make sure not called again and the listener is cleaned up
-        window.removeEventListener('load',savecomplete.onload, true);
+        window.removeEventListener('load',scMain.onload, true);
 
         // Set up preference change observer
-        savecomplete.prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.savecomplete@perlprogrammer.com.");
-        savecomplete.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);
-        savecomplete.prefs.addObserver("", savecomplete, false);
+        scMain.prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.savecomplete@perlprogrammer.com.");
+        scMain.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);
+        scMain.prefs.addObserver("", scMain, false);
 
         // Hook context menu to contextShow
         var contextMenu = document.getElementById('contentAreaContextMenu');
-        contextMenu.addEventListener('popupshowing', savecomplete.contextShow, true);
+        contextMenu.addEventListener('popupshowing', scMain.contextShow, true);
 
         // Set debug from prefs (updated when it changes, so we only need to initialize it)
-        savecomplete.debug = savecomplete.prefs.getBoolPref('debug');
+        scMain.debug = scMain.prefs.getBoolPref('debug');
 
-        savecomplete.updateUIFromPrefs();
+        scMain.updateUIFromPrefs();
     },
     updateUIFromPrefs: function() {
-        savecomplete.dump('Updating UI from preferences');
-        var replaceBuiltin = savecomplete.prefs.getBoolPref('replace_builtin');
+        scMain.dump('Updating UI from preferences');
+        var replaceBuiltin = scMain.prefs.getBoolPref('replace_builtin');
 
         // Show in context menu if the preference for it is set and replace builtin is not on
-        savecomplete.showInContext = !replaceBuiltin && savecomplete.prefs.getBoolPref('context');
+        scMain.showInContext = !replaceBuiltin && scMain.prefs.getBoolPref('context');
 
         // Replace built-in save if preference is set
         var builtinSaveCommand = document.getElementById('Browser:SavePage');
         var contextSave = document.getElementById('context-savepage');
         var saveCompleteMenuItem = document.getElementById('scNormalSaveFileMenuItem');
         if(replaceBuiltin) {
-            builtinSaveCommand.setAttribute('oncommand', 'savecomplete.overrideSave()');
-            contextSave.setAttribute('oncommand', 'savecomplete.overrideSave()');
+            builtinSaveCommand.setAttribute('oncommand', 'scMain.overrideSave()');
+            contextSave.setAttribute('oncommand', 'scMain.overrideSave()');
             saveCompleteMenuItem.hidden = true;
         } else {
             builtinSaveCommand.setAttribute('oncommand', 'saveDocument(window.content.document)');
@@ -84,30 +87,30 @@ var savecomplete = {
         }
     },
     contextShow: function() {
-        if(!savecomplete.showInContext) return;
+        if(!scMain.showInContext) return;
         gContextMenu.showItem("scNormalSaveContextMenuItem", !( gContextMenu.inDirList || gContextMenu.isContentSelected || gContextMenu.onLink));
     },
     save: function() { // Called by selecting from either the context menu or the file menu
         // Get page that is supposed to be saved
         var focusedWindow = document.commandDispatcher.focusedWindow;
         if (focusedWindow == window) focusedWindow = _content;
-        savecomplete.saveDocument(focusedWindow.document);
+        scMain.saveDocument(focusedWindow.document);
     },
     saveDocument: function(doc) { // Call directly if focusedWindow code doesn't work (like for Custom Buttons)
         // First check if it's html and if it's from an accepted protocol
         if(doc.contentType != "text/html" && doc.contentType != "application/xhtml+xml") {
-            alert(savecomplete.illegalContentType);
+            alert(scTrans('savecompleteIllegalContentType'));
             return;
         } else if(doc.location.href.match(/^(ftp|file|chrome|view-source|about|javascript|news|snews|ldap|ldaps|mailto|finger|telnet|gopher|irc|mailbox)/)) {
-            alert(savecomplete.illegalProtocol+" "+doc.location.href.split("://").shift()+"://");
+            alert(scTrans('savecompleteIllegalProtocol')+"\n"+doc.location.href.split("://").shift()+"://");
             return;
         }
 
         // Create a save dialog and then display it
         var nsIFilePicker = Components.interfaces.nsIFilePicker;
         var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
-        fp.init(window, savecomplete.savePage, nsIFilePicker.modeSave);
-        fp.appendFilter(savecomplete.saveFilter,"");
+        fp.init(window, scTrans('savecompleteSavePage'), nsIFilePicker.modeSave);
+        fp.appendFilter(scTrans('savecompleteSaveFilter'),"");
 
         // Get default save string=
         // The default save string is either the url after the '/' or it is the title of the document
@@ -124,7 +127,7 @@ var savecomplete = {
         var res = fp.show();
         if (res == nsIFilePicker.returnCancel) return;
 
-        savecomplete.internalSave(doc, fp.file);
+        scMain.internalSave(doc, fp.file);
     },
     overrideSave: function() { // Called by overridden internal Firefox save
         /* overrideSave overrides functions defined in contentAreaUtils.js to
@@ -133,7 +136,7 @@ var savecomplete = {
          */
         // Check if can override successfully
         if(typeof window['getTargetFile'] == 'undefined' || typeof window['saveDocument'] == 'undefined') {
-            savecomplete.save();
+            scMain.save();
             return;
         }
 
@@ -151,8 +154,8 @@ var savecomplete = {
 
             if(fpParams.saveMode != 0 && fpParams.saveAsType == 0) {
                 // Save webpage complete selected so override and return false to stop internalSave
-                savecomplete.dump('Using savecomplete save instead of firefox save');
-                savecomplete.internalSave(doc, fpParams.file);
+                scMain.dump('Using savecomplete save instead of firefox save');
+                scMain.internalSave(doc, fpParams.file);
                 return false;
             }
 
@@ -171,47 +174,47 @@ var savecomplete = {
             new scPageSaver.scDefaultFileSaver(fileObject),
             new scPageSaver.scDefaultFileProvider(),
             {
-                saveIframes: savecomplete.prefs.getBoolPref('save_iframes'),
-                saveObjects: savecomplete.prefs.getBoolPref('save_objects'),
-                rewriteLinks: savecomplete.prefs.getBoolPref('rewrite_links'),
-                callback: savecomplete.saverComplete
+                saveIframes: scMain.prefs.getBoolPref('save_iframes'),
+                saveObjects: scMain.prefs.getBoolPref('save_objects'),
+                rewriteLinks: scMain.prefs.getBoolPref('rewrite_links'),
+                callback: scMain.saverComplete
             }
         );
-        savecomplete.savers.push(saver);
+        scMain.savers.push(saver);
         saver.run();
     },
     saverComplete: function(saver, result, messages) {
-        for(var i = 0; i < savecomplete.savers.length; i++) {
-            if(savecomplete.savers[i] === saver) {
-                savecomplete.savers.splice(i, 1);
+        for(var i = 0; i < scMain.savers.length; i++) {
+            if(scMain.savers[i] === saver) {
+                scMain.savers.splice(i, 1);
             }
         }
 
-        savecomplete.dumpObj(messages);
+        scMain.dumpObj(messages);
     },
     observe: function(subject, topic, data) {
         // Observer for pref changes
         if (topic != "nsPref:changed") return;
 
-        savecomplete.dump('Pref changed: '+data);
+        scMain.dump('Pref changed: '+data);
         switch(data) {
             case 'context':
             case 'replace_builtin':
-                savecomplete.updateUIFromPrefs();
+                scMain.updateUIFromPrefs();
                 break;
             case 'debug':
-                savecomplete.debug = savecomplete.prefs.getBoolPref('debug');
+                scMain.debug = scMain.prefs.getBoolPref('debug');
                 break;
         }
    },
     /* Console logging functions */
     dump: function(message) { // Debuging function -- prints to javascript console
-        if(!savecomplete.debug) return;
+        if(!scMain.debug) return;
         var ConsoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
         ConsoleService.logStringMessage(message);
     },
     dumpObj: function(obj, level) {
-        if(!savecomplete.debug) return;
+        if(!scMain.debug) return;
         if(level == undefined) level = 0;
         var returnStr = "";
         var indent = "";
@@ -234,7 +237,7 @@ var savecomplete = {
             if(obj.length) {
                 arrayStr += "[\n";
                 for(var i = 0; i < obj.length; i++) {
-                    arrayStr += indent+"\t"+savecomplete.dumpObj(obj[i], level+1)+",\n";
+                    arrayStr += indent+"\t"+scMain.dumpObj(obj[i], level+1)+",\n";
                 }
                 arrayStr += indent + "]";
             } else {
@@ -246,7 +249,7 @@ var savecomplete = {
             var foundProps = false;
             for(var prop in obj) {
                 foundProps = true;
-                objStr += indent+"\t"+prop+": "+savecomplete.dumpObj(obj[prop], level+1)+",\n";
+                objStr += indent+"\t"+prop+": "+scMain.dumpObj(obj[prop], level+1)+",\n";
             }
             objStr += indent + "}";
             if(!foundProps) {
@@ -262,10 +265,10 @@ var savecomplete = {
         }
 
         if(level == 0) {
-            savecomplete.dump(returnStr);
+            scMain.dump(returnStr);
         } else {
             return returnStr;
         }
     }
 };
-window.addEventListener('load',savecomplete.onload, true);
+window.addEventListener('load',scMain.onload, true);
