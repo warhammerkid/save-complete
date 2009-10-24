@@ -112,14 +112,13 @@ var scMain = {
         fp.init(window, scTrans('savecompleteSavePage'), nsIFilePicker.modeSave);
         fp.appendFilter(scTrans('savecompleteSaveFilter'),"");
 
-        // Get default save string=
         // The default save string is either the url after the '/' or it is the title of the document
         // I've tried to be as close to the default behavior in Firefox as possible
-        var defaultSaveString = doc.location.href.split("?").shift();
-        if(defaultSaveString.split("/").pop() == "") // Nothing after '/' so use the title
+        var defaultSaveString = "Saved Page.html";
+        if(doc.location.pathname.split("/").pop() == "") // Nothing after '/' so use the title
             defaultSaveString = doc.title+".html";
         else {
-            defaultSaveString = defaultSaveString.split("/").pop();
+            defaultSaveString = doc.location.pathname.split("/").pop();
             if(defaultSaveString.match(/\.x?html?$/) == null) defaultSaveString += ".html";
         }
         fp.defaultString = defaultSaveString.replace(/ *[:*?|<>\"/]+ */g," "); // Clean out illegal characters
@@ -211,7 +210,7 @@ var scMain = {
     dump: function(message) { // Debuging function -- prints to javascript console
         if(!scMain.debug) return;
         var ConsoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
-        ConsoleService.logStringMessage(message);
+        ConsoleService.logStringMessage("[savecomplete] "+message);
     },
     dumpObj: function(obj, level) {
         if(!scMain.debug) return;
