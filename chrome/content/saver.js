@@ -209,23 +209,25 @@ scPageSaver.prototype.QueryInterface = function(iid) {
 scPageSaver.prototype._extractURIs = function() {
     var e = null, iter = null;
 
+    var baseURI = this._doc.baseURI;
+
     // Process images
     iter = this._doc.evaluate("//img[@src]", this._doc, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
     while(e = iter.iterateNext()) {
-        this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), this._uri, 'attribute', 'base'));
+        this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), baseURI, 'attribute', 'base'));
     }
 
     // Process script tags
     iter = this._doc.evaluate("//script[@src]", this._doc, null, 0, null);
     while(e = iter.iterateNext()) {
-        this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), this._uri, 'attribute', 'base'));
+        this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), baseURI, 'attribute', 'base'));
     }
 
     if(this._options['saveIframes']) {
         // Only save the html in the iframe - don't process the iframe document
         iter = this._doc.evaluate("//iframe[@src]", this._doc, null, 0, null);
         while(e = iter.iterateNext()) {
-            this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), this._uri, 'attribute', 'base'));
+            this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), baseURI, 'attribute', 'base'));
         }
     }
 
@@ -233,14 +235,14 @@ scPageSaver.prototype._extractURIs = function() {
         // Process embed tags
         iter = this._doc.evaluate("//embed[@src]", this._doc, null, 0, null);
         while(e = iter.iterateNext()) {
-            this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), this._uri, 'attribute', 'base'));
+            this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), baseURI, 'attribute', 'base'));
         }
 
         // Process object tags (or at least try to)
         iter = this._doc.evaluate("//object", this._doc, null, 0, null);
         while(e = iter.iterateNext()) {
             if(e.getAttribute('data')) {
-                this._uris.push(new scPageSaver.scURI(e.getAttribute('data'), this._uri, 'attribute', 'base'));
+                this._uris.push(new scPageSaver.scURI(e.getAttribute('data'), baseURI, 'attribute', 'base'));
             }
 
             // Find param that references the object's data
@@ -249,7 +251,7 @@ scPageSaver.prototype._extractURIs = function() {
             while(p = pIter.iterateNext()) {
                 var param = p.getAttribute('name');
                 if(param == 'movie' || param == 'src') {
-                    this._uris.push(new scPageSaver.scURI(p.getAttribute('value'), this._uri, 'attribute', 'base'));
+                    this._uris.push(new scPageSaver.scURI(p.getAttribute('value'), baseURI, 'attribute', 'base'));
                     break;
                 }
             }
@@ -259,13 +261,13 @@ scPageSaver.prototype._extractURIs = function() {
     // Process input elements with an image type
     iter = this._doc.evaluate("//input[@type='image']", this._doc, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
     while(e = iter.iterateNext()) {
-        this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), this._uri, 'attribute', 'base'));
+        this._uris.push(new scPageSaver.scURI(e.getAttribute('src'), baseURI, 'attribute', 'base'));
     }
 
     // Process elements which have a background attribute
     iter = this._doc.evaluate("//*[@background]", this._doc, null, 0, null);
     while(e = iter.iterateNext()) {
-        this._uris.push(new scPageSaver.scURI(e.getAttribute('background'), this._uri, 'attribute', 'base'));
+        this._uris.push(new scPageSaver.scURI(e.getAttribute('background'), baseURI, 'attribute', 'base'));
     }
 
     // Process IE conditional comments
@@ -279,13 +281,13 @@ scPageSaver.prototype._extractURIs = function() {
         // Extract link element refs (stylesheets)
         var linkRe = /<link[^>]+href=(["'])([^"']*)\1/igm;
         while((results = linkRe.exec(e.data)) != null) {
-            this._uris.push(new scPageSaver.scURI(results[2], this._uri, 'attribute', 'base'));
+            this._uris.push(new scPageSaver.scURI(results[2], baseURI, 'attribute', 'base'));
         }
 
         // Extract script elements refs
         var scriptRe = /<script[^>]+src=(["'])([^"']*)\1/igm;
         while((results = scriptRe.exec(e.data)) != null) {
-            this._uris.push(new scPageSaver.scURI(results[2], this._uri, 'attribute', 'base'));
+            this._uris.push(new scPageSaver.scURI(results[2], baseURI, 'attribute', 'base'));
         }
     }
 
@@ -297,7 +299,7 @@ scPageSaver.prototype._extractURIs = function() {
 
         var results = null;
         while((results = scPageSaver.cssURIRegex.exec(cssText)) != null) {
-            this._uris.push(new scPageSaver.scURI(results[2], this._uri, 'css', 'base'));
+            this._uris.push(new scPageSaver.scURI(results[2], baseURI, 'css', 'base'));
         }
     }
 
@@ -306,7 +308,7 @@ scPageSaver.prototype._extractURIs = function() {
     for(var i = 0; i < styleSheets.length; i++) {
         if (styleSheets[i].ownerNode && styleSheets[i].ownerNode.getAttribute) {
             if(styleSheets[i].ownerNode.getAttribute("href")) {
-                this._uris.push(new scPageSaver.scURI(styleSheets[i].ownerNode.getAttribute("href"), this._uri, 'attribute', 'base'));
+                this._uris.push(new scPageSaver.scURI(styleSheets[i].ownerNode.getAttribute("href"), baseURI, 'attribute', 'base'));
                 this._extractURIsFromStyleSheet(styleSheets[i], styleSheets[i].href)
             } else {
                 this._extractURIsFromStyleSheet(styleSheets[i], this._uri, true);
